@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contabilizador de Horas</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .nombre-container {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #357ABD;
+    }
+
+    .info p {
+      font-size: 16px;
+      color: #555;
+      margin: 10px 0;
+    }
+
+    .info span {
+      font-weight: bold;
+      color: #222;
+    }
+
+    .historial {
+      margin-top: 30px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+
+    .historial-item {
+      font-size: 14px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .historial-item strong {
+      display: inline-block;
+      width: 70px;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    // --- Lógica JS principal ---
+    let inicio = null;
+    let registros = [];
+
+    function obtenerHoraLocalVE(date = new Date()) {
+      return new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    }
+
+    function formatearHora(date) {
+      return date.toLocaleTimeString("es-VE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    window.marcarInicio = function() {
+      const nombre = document.getElementById("nombrePersona").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      inicio = obtenerHoraLocalVE();
+      document.getElementById("horaInicio").textContent = formatearHora(inicio);
+      document.getElementById("horaFin").textContent = "-";
+      document.getElementById("duracion").textContent = "-";
+    }
+
+    window.marcarFin = function() {
+      if (!inicio) {
+        alert("Primero marca la hora de inicio.");
+        return;
+      }
+      const nombre = document.getElementById("nombrePersona").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      const fin = obtenerHoraLocalVE();
+      document.getElementById("horaFin").textContent = formatearHora(fin);
+      const duracionMs = fin - inicio;
+      const segundos = Math.floor(duracionMs / 1000);
+      const minutos = Math.floor(segundos / 60);
+      const horas = Math.floor(minutos / 60);
+      const restoMin = minutos % 60;
+      const restoSeg = segundos % 60;
+      const duracionTexto = `${horas}h ${restoMin}m ${restoSeg}s`;
+      document.getElementById("duracion").textContent = duracionTexto;
+      const registro = {
+        nombre,
+        inicio: formatearHora(inicio),
+        fin: formatearHora(fin),
+        duracion: duracionTexto
+      };
+      registros.push(registro);
+      localStorage.setItem('historial_registros', JSON.stringify(registros));
+      const item = document.createElement("div");
+      item.className = "historial-item";
+      item.innerHTML = `<strong>👤</strong> ${registro.nombre}<br>
+                        <strong>Inicio:</strong> ${registro.inicio}<br>
+                        <strong>Fin:</strong> ${registro.fin}<br>
+                        <strong>Duración:</strong> ${registro.duracion}`;
+      document.getElementById("historial").appendChild(item);
+      inicio = null;
+    }
+
+    window.eliminarHistorial = function() {
+      if (confirm("¿Estás seguro de que quieres borrar todo el historial?")) {
+        registros = [];
+        localStorage.removeItem('historial_registros');
+        document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong>";
+      }
+    }
+
+    window.enviarHistorial = async function() {
+      if (registros.length === 0) {
+        alert("No hay registros en el historial.");
+        return;
+      }
+      // Reemplaza esta URL por la de tu Web App de Google Apps Script
+      const endpoint = "https://script.google.com/macros/s/AKfycbzqE7XGK7r-GFqnBiIYYu8intbr3XEO46les8U0GN1xjoWGYt_ehjKrdeGRqWvs_5b_/exec";
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registros)
+        });
+        if (response.ok) {
+          alert("✅ El historial ha sido enviado exitosamente a Google Sheets.");
+        } else {
+          alert("Ocurrió un error al enviar el historial.");
+        }
+      } catch (e) {
+        alert("Error de red o de servidor: " + e.message);
+      }
+    }
+
+    // Al cargar la página, restaurar historial desde localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      const guardados = localStorage.getItem('historial_registros');
+      if (guardados) {
+        registros = JSON.parse(guardados);
+        registros.forEach(registro => {
+          const item = document.createElement("div");
+          item.className = "historial-item";
+          item.innerHTML = `<strong>👤</strong> ${registro.nombre}<br>
+                            <strong>Inicio:</strong> ${registro.inicio}<br>
+                            <strong>Fin:</strong> ${registro.fin}<br>
+                            <strong>Duración:</strong> ${registro.duracion}`;
+          document.getElementById("historial").appendChild(item);
+        });
+      }
+    });
+  </script>
+
+  <div class="container">
+    <div class="card">
+      <h1>Contabilizador de Horas</h1>
+
+      <div class="nombre-container">
+        <input type="text" id="nombrePersona" placeholder="Ingrese su nombre">
+      </div>
+
+      <button onclick="marcarInicio()">Marcar Inicio</button>
+      <button onclick="marcarFin()">Marcar Fin</button>
+      <button onclick="eliminarHistorial()">Eliminar Historial</button>
+      <button onclick="enviarHistorial()">Enviar a Google Sheets</button>
+
+      <div class="info">
+        <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
+        <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
+        <p><strong>Duración:</strong> <span id="duracion">-</span></p>
+      </div>
+
+      <div class="historial" id="historial">
+        <strong>Histórico de tiempos:</strong>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
