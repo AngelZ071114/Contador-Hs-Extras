@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contabilizador de Horas</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .nombre-container {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #357ABD;
+    }
+
+    .info p {
+      font-size: 16px;
+      color: #555;
+      margin: 10px 0;
+    }
+
+    .info span {
+      font-weight: bold;
+      color: #222;
+    }
+
+    .historial {
+      margin-top: 30px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+
+    .historial-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 8px;
+    }
+    .historial-item {
+      font-size: 15px;
+      margin-bottom: 18px;
+      background: linear-gradient(120deg, #f7fafd 80%, #e3e8ee 100%);
+      padding: 16px 20px 12px 20px;
+      border-radius: 14px;
+      border: none;
+      color: #23272e;
+      box-shadow: 0 4px 18px #4a90e220;
+      position: relative;
+      transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .historial-item strong {
+      color: #357abd;
+      font-size: 17px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .historial-item .historial-motivo {
+      color: #f97f51;
+      font-weight: 600;
+      font-size: 15px;
+      margin-left: 2px;
+    }
+    .historial-item .historial-monto {
+      color: #43b97b;
+      font-weight: 600;
+      font-size: 15px;
+      margin-left: 2px;
+    }
+    .historial-item .historial-fecha {
+      color: #888;
+      font-size: 13px;
+      margin-top: 2px;
+      display: block;
+    }
+    .historial-item .historial-extra {
+      color: #357abd;
+      font-size: 14px;
+      margin-top: 2px;
+      display: block;
+    }
+    .manual-dark .historial-item {
+      background: linear-gradient(120deg, #23272e 80%, #2d3a4a 100%) !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 4px 18px #0006 !important;
+      border: none !important;
+    }
+    .manual-dark .historial-item strong {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-motivo {
+      color: #f7b731 !important;
+    }
+    .manual-dark .historial-item .historial-monto {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-fecha {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark .historial-item .historial-extra {
+      color: #43b7e9 !important;
+    }
+    /* Estilos para modo oscuro */
+    body.manual-dark {
+      background: #181c20 !important;
+      color: #e0e6ef !important;
+      transition: background 0.5s, color 0.5s;
+    }
+    .manual-dark .card {
+      background: #23272e !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25) !important;
+    }
+    .manual-dark input[type="text"],
+    .manual-dark input[type="number"] {
+      background: rgba(44, 62, 80, 0.85) !important;
+      color: #eaf6fb !important;
+      border: 1.5px solid #4a90e2 !important;
+      box-shadow: 0 2px 8px #0004 !important;
+      outline: none !important;
+      font-weight: 400;
+      transition: background 0.3s, border 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .manual-dark input[type="text"]::placeholder,
+    .manual-dark input[type="number"]::placeholder {
+      color: #b3c6e0 !important;
+      opacity: 0.8;
+    }
+    .manual-dark input[type="text"]:focus,
+    .manual-dark input[type="number"]:focus {
+      border: 2px solid #4a90e2 !important;
+      box-shadow: 0 0 0 3px #4a90e255 !important;
+      background: rgba(44, 62, 80, 1) !important;
+      color: #fff !important;
+    }
+    .manual-dark button {
+      background-color: #3b6cb7 !important; /* azul principal */
+      color: #fff !important;
+      box-shadow: 0 2px 12px #1a1a2a33 !important;
+      border: none !important;
+    }
+    .manual-dark button:hover {
+      background-color: #5fa8d3 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px #1a1a2a55 !important;
+    }
+    .manual-dark #contingenciaBtn {
+      background: linear-gradient(90deg, #f7b731 60%, #f97f51 100%) !important;
+      color: #23272e !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #f7b73155 !important;
+    }
+    .manual-dark #contingenciaBtn:hover {
+      background: linear-gradient(90deg, #f97f51 60%, #f7b731 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #f97f5155 !important;
+    }
+    .manual-dark button[onclick*="eliminarHistorial"] {
+      background: linear-gradient(90deg, #e74c3c 60%, #f97f51 100%) !important;
+      color: #fff !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #e74c3c55 !important;
+    }
+    .manual-dark button[onclick*="eliminarHistorial"]:hover {
+      background: linear-gradient(90deg, #f97f51 60%, #e74c3c 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px #e74c3c77 !important;
+    }
+    .manual-dark button[onclick*="enviarHorasExtras"] {
+      background: linear-gradient(90deg, #43e97b 60%, #38f9d7 100%) !important;
+      color: #23272e !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #43e97b55 !important;
+    }
+    .manual-dark button[onclick*="enviarHorasExtras"]:hover {
+      background: linear-gradient(90deg, #38f9d7 60%, #43e97b 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #38f9d777 !important;
+    }
+    .manual-dark .info p {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark .info span {
+      color: #e0e6ef !important;
+    }
+    .manual-dark .historial {
+      border-top: 1px solid #3b4a5a !important;
+    }
+    .manual-dark .historial-item {
+      background: #23272e !important;
+      border: 1px solid #3b4a5a !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 1px 6px #0004 !important;
+    }
+    .manual-dark .historial-item strong {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-motivo {
+      color: #f7b731 !important;
+    }
+    .manual-dark .historial-item .historial-monto {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-fecha {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark h1 {
+      color: #e0e6ef !important;
+      text-shadow: 0 2px 8px #1a1a1a55, 0 1px 0 #3b4a5a;
+      letter-spacing: 1.5px;
+    }
+    #darkModeToggle {
+      transition: background 0.4s, color 0.4s;
+    }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import emailjs from 'https://cdn.skypack.dev/@emailjs/browser';
+    emailjs.init("zVacNjGjZLO-ALRSe");
+    // --- Lógica JS principal ---
+    let inicio = null;
+    let registros = [];
+
+    function obtenerHoraLocalVE(date = new Date()) {
+      return new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    }
+
+    function formatearHora(date) {
+      return date.toLocaleTimeString("es-VE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    window.marcarInicio = function() {
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      const motivo = document.getElementById("motivo").value.trim();
+      inicio = obtenerHoraLocalVE();
+      document.getElementById("horaInicio").textContent = formatearHora(inicio);
+      document.getElementById("horaFin").textContent = "-";
+      document.getElementById("duracion").textContent = "-";
+      // Guardar inicio pendiente en localStorage
+      localStorage.setItem('inicio_pendiente', JSON.stringify({
+        nombre,
+        motivo,
+        inicio: inicio.toISOString()
+      }));
+    }
+    // Al cargar la página, restaurar inicio pendiente si existe
+    window.addEventListener('DOMContentLoaded', () => {
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) {
+        try {
+          const data = JSON.parse(inicioPend);
+          if (data && data.inicio) {
+            inicio = new Date(data.inicio);
+            document.getElementById("nombre").value = data.nombre || '';
+            document.getElementById("motivo").value = data.motivo || '';
+            document.getElementById("horaInicio").textContent = formatearHora(inicio);
+            document.getElementById("horaFin").textContent = "-";
+            document.getElementById("duracion").textContent = "-";
+          }
+        } catch(e) {}
+      }
+      // Al cargar, restaurar historial desde localStorage
+      const guardados = localStorage.getItem('historial_registros');
+      document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+      if (guardados) {
+        registros = JSON.parse(guardados);
+        registros.forEach((registro, idx) => {
+          const item = document.createElement("div");
+          item.className = "historial-item";
+          let fechaDMY = '-';
+          if (registro.dia) {
+            const [y, m, d] = registro.dia.split('-');
+            fechaDMY = `${d}-${m}-${y}`;
+          }
+          let html = `<strong>👤</strong> ${registro.nombre}`;
+          if (registro.motivo) {
+            html += `<span class='historial-motivo'> | ${registro.motivo}</span>`;
+          }
+          if (registro.monto) {
+            html += `<span class='historial-monto'> | ${registro.monto} USDT</span>`;
+          }
+          html += `<span class='historial-fecha'>📅 ${fechaDMY}</span>`;
+          if (registro.inicio && registro.fin) {
+            html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
+          }
+          if (registro.duracion) {
+            html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
+          }
+          item.innerHTML = html;
+          document.getElementById("historial").appendChild(item);
+        });
+      }
+      actualizarResumenHoras();
+    });
+
+    window.marcarFin = function() {
+      if (!inicio) {
+        alert("Primero marca la hora de inicio.");
+        return;
+      }
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      const motivo = document.getElementById("motivo").value.trim();
+      const fin = obtenerHoraLocalVE();
+      document.getElementById("horaFin").textContent = formatearHora(fin);
+      const duracionMs = fin - inicio;
+      const segundos = Math.floor(duracionMs / 1000);
+      const minutos = Math.floor(segundos / 60);
+      const horas = Math.floor(minutos / 60);
+      const restoMin = minutos % 60;
+      const restoSeg = segundos % 60;
+      const duracionTexto = `${horas}h ${restoMin}m ${restoSeg}s`;
+      document.getElementById("duracion").textContent = duracionTexto;
+      // Obtener la fecha actual en formato YYYY-MM-DD
+      const hoy = obtenerHoraLocalVE();
+      const dia = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+      // Verifica si la contingencia fue aplicada
+      // const contingenciaAplicada = localStorage.getItem('contingencia_aplicada') === '1';
+      const registro = {
+        nombre,
+        motivo: motivo,
+        dia,
+        inicio: formatearHora(inicio),
+        fin: formatearHora(fin),
+        duracion: duracionTexto
+      };
+      registros.push(registro);
+      localStorage.setItem('historial_registros', JSON.stringify(registros));
+      const item = document.createElement("div");
+      item.className = "historial-item";
+      const fechaDMY = `${registro.dia.split('-')[2]}-${registro.dia.split('-')[1]}-${registro.dia.split('-')[0]}`;
+      item.innerHTML = `<strong>👤</strong> ${registro.nombre}<br>
+                        <span class="historial-motivo">${registro.motivo}</span><br>
+                        <span class="historial-fecha">${fechaDMY}</span>`;
+      if (registro.inicio) {
+        item.innerHTML += `<br><span><strong>⏰</strong> ${registro.inicio} - ${registro.fin}</span>`;
+      }
+      if (registro.duracion) {
+        item.innerHTML += `<br><span><strong>⏳</strong> ${registro.duracion}</span>`;
+      }
+      document.getElementById("historial").appendChild(item);
+      actualizarResumenHoras();
+      inicio = null;
+    }
+
+    window.eliminarHistorial = function() {
+      if (confirm("¿Estás seguro de que quieres borrar todo el historial?")) {
+        registros = [];
+        localStorage.removeItem('historial_registros');
+        localStorage.removeItem('contingencia_aplicada');
+        localStorage.removeItem('monto_pagar_extra');
+        document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+        actualizarResumenHoras();
+      }
+    }
+
+    window.enviarHorasExtras = function() {
+      if (registros.length === 0) {
+        alert("No hay registros en el historial.");
+        return;
+      }
+      let historialHtml = "";
+      registros.forEach(item => {
+        let fechaDMY = '-';
+        if (item.dia) {
+          const [y, m, d] = item.dia.split('-');
+          fechaDMY = `${d}-${m}-${y}`;
+        }
+        let html = `<p>👤 <strong>${item.nombre}</strong><br>`;
+        html += `Motivo: ${item.motivo ? item.motivo : '-'}<br>`;
+        if (item.monto) {
+          html += `Monto: ${item.monto} USDT<br>`;
+        }
+        html += `Fecha: ${fechaDMY}`;
+        if (item.inicio) {
+          html += `<br>Inicio: ${item.inicio}`;
+        }
+        if (item.fin) {
+          html += `<br>Fin: ${item.fin}`;
+        }
+        if (item.duracion) {
+          html += `<br>Duración: ${item.duracion}`;
+        }
+        html += `</p>`;
+        historialHtml += html;
+      });
+      // Calcula el resumen de horas trabajadas
+      let totalMin = 0;
+      registros.forEach(r => {
+        if (r.duracion) {
+          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+          if (match) {
+            totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+        }
+      });
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      let monto = totalMin * 0.025;
+      if (localStorage.getItem('contingencia_aplicada') === '1') {
+        monto += 10;
+      }
+      // Sumar monto a pagar de todos los registros
+      registros.forEach(r => {
+        if (r.monto && !isNaN(r.monto)) {
+          monto += parseFloat(r.monto);
+        }
+      });
+      const resumen = `<p><strong>Total de horas trabajadas: ${horas}h ${mins}m (Monto: ${monto.toFixed(3)} USDT)</strong></p>`;
+      const templateParams = {
+        historial: resumen + historialHtml
+      };
+      emailjs.send("service_qitwmhc", "template_ph39uek", templateParams)
+      .then(() => {
+        alert("✅ El historial ha sido enviado exitosamente a tu correo.");
+      })
+      .catch((error) => {
+        alert("Error al enviar: " + error.text);
+      });
+    }
+
+    // Botón de contingencia
+    document.getElementById("contingenciaBtn").addEventListener('click', function() {
+      if (!inicio) {
+        alert('Debes iniciar las horas extras.');
+        return;
+      }
+      let extra = parseFloat(localStorage.getItem('monto_pagar_extra') || '0');
+      extra += 10;
+      localStorage.setItem('monto_pagar_extra', extra);
+      // Añadir contingencia al último registro global del usuario del día
+      let nombre = document.getElementById("nombre").value.trim();
+      let fecha = new Date();
+      let dia = fecha.getFullYear() + '-' + String(fecha.getMonth()+1).padStart(2,'0') + '-' + String(fecha.getDate()).padStart(2,'0');
+      let globales = JSON.parse(localStorage.getItem('registros_globales') || '[]');
+      // Buscar el último registro global del usuario del día, considerando 'fecha' o 'dia'
+      for (let i = globales.length - 1; i >= 0; i--) {
+        let regDia = globales[i].fecha || globales[i].dia;
+        if (globales[i].nombre === nombre && regDia === dia) {
+          globales[i].contingencia = 10;
+          let montoActual = parseFloat(globales[i].monto || '0');
+          montoActual += 10;
+          globales[i].monto = montoActual.toFixed(2);
+          break;
+        }
+      }
+      localStorage.setItem('registros_globales', JSON.stringify(globales));
+      actualizarResumenHoras();
+      alert('Se han sumado 10 USDT por contingencia al monto total.');
+    });
+
+    // Modo oscuro manual
+    function aplicarModoOscuro() {
+      const dark = localStorage.getItem('modo_oscuro') === '1';
+      document.body.classList.toggle('manual-dark', dark);
+      document.getElementById('darkModeToggle').textContent = dark ? '☀️' : '🌙';
+      document.getElementById('darkModeToggle').style.background = dark ? '#23272e' : '#fff';
+      document.getElementById('darkModeToggle').style.color = dark ? '#e0e6ef' : '#23272e';
+    }
+    document.getElementById('darkModeToggle').addEventListener('click', function() {
+      const dark = !(localStorage.getItem('modo_oscuro') === '1');
+      localStorage.setItem('modo_oscuro', dark ? '1' : '0');
+      aplicarModoOscuro();
+    });
+    // Al cargar la página
+    aplicarModoOscuro();
+
+    // Restaurar estado al cargar
+    if (localStorage.getItem('contingencia_aplicada') === '1') {
+      // contingenciaCheckbox.checked = true;
+    } else {
+      // contingenciaCheckbox.checked = false;
+    }
+
+    function actualizarResumenHoras() {
+      // Leer siempre los registros actualizados desde localStorage
+      let registrosActualizados = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      let totalMin = 0;
+      registrosActualizados.forEach(r => {
+        // Solo sumar si existe la propiedad 'duracion'
+        if (r.duracion) {
+          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+          if (match) {
+            totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+        }
+      });
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      let monto = totalMin * 0.025;
+      // Sumar monto a pagar de todos los registros
+      registrosActualizados.forEach(r => {
+        if (r.monto && !isNaN(r.monto)) {
+          monto += parseFloat(r.monto);
+        }
+      });
+      // Sumar monto extra de contingencia
+      let extra = parseFloat(localStorage.getItem('monto_pagar_extra') || '0');
+      monto += extra;
+      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
+    }
+
+    // Al cargar la página, restaurar historial desde localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      const guardados = localStorage.getItem('historial_registros');
+      document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+      if (guardados) {
+        registros = JSON.parse(guardados);
+        registros.forEach((registro, idx) => {
+          const item = document.createElement("div");
+          item.className = "historial-item";
+          let fechaDMY = '-';
+          if (registro.dia) {
+            const [y, m, d] = registro.dia.split('-');
+            fechaDMY = `${d}-${m}-${y}`;
+          }
+          let html = `<strong>👤</strong> ${registro.nombre}`;
+          if (registro.motivo) {
+            html += `<span class='historial-motivo'> | ${registro.motivo}</span>`;
+          }
+          if (registro.monto) {
+            html += `<span class='historial-monto'> | ${registro.monto} USDT</span>`;
+          }
+          html += `<span class='historial-fecha'>📅 ${fechaDMY}</span>`;
+          if (registro.inicio && registro.fin) {
+            html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
+          }
+          if (registro.duracion) {
+            html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
+          }
+          item.innerHTML = html;
+          document.getElementById("historial").appendChild(item);
+        });
+      }
+      actualizarResumenHoras();
+    });
+
+    window.agregarMotivoTrabajo = function() {
+      const motivoTrabajo = document.getElementById("motivoTrabajo").value.trim();
+      const montoPagar = document.getElementById("montoPagar").value.trim();
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!motivoTrabajo) {
+        alert("Por favor, ingresa el motivo del trabajo.");
+        return;
+      }
+      if (!montoPagar || isNaN(montoPagar)) {
+        alert("Por favor, ingresa solo números en el monto a pagar.");
+        return;
+      }
+      if (!nombre) {
+        alert("Por favor, ingresa tu nombre.");
+        return;
+      }
+      let registros = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      const hoy = new Date();
+      const fecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+      const registro = {
+        nombre,
+        motivo: motivoTrabajo,
+        monto: montoPagar,
+        dia: fecha
+      };
+      registros.push(registro);
+      localStorage.setItem('historial_registros', JSON.stringify(registros));
+      guardarRegistroGlobal({nombre, motivo: motivoTrabajo, monto: montoPagar, fecha});
+      // Mostrar en el historial con papelera
+      const item = document.createElement("div");
+      item.className = "historial-item";
+      const idx = registros.length - 1;
+      item.innerHTML = `<strong>👤</strong> ${nombre}<br><strong>Motivo:</strong> ${motivoTrabajo}<br><strong>Monto:</strong> ${montoPagar} USDT<br><strong>Fecha:</strong> ${fecha} <button onclick='eliminarRegistroHistorial(${idx})' title='Eliminar' style='background:none;border:none;cursor:pointer;font-size:18px;color:#e74c3c;margin-left:8px;'>🗑️</button>`;
+      document.getElementById("historial").appendChild(item);
+      document.getElementById("motivoTrabajo").value = "";
+      document.getElementById("montoPagar").value = "";
+      alert("Refresca la página para ver el monto actualizado");
+    }
+    // Función para eliminar registro del historial y global
+    window.eliminarRegistroHistorial = function(idx) {
+      let registros = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      if (idx >= 0 && idx < registros.length) {
+        registros.splice(idx, 1);
+        localStorage.setItem('historial_registros', JSON.stringify(registros));
+        // Refrescar historial visual (sin tocar el registro global)
+        document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+        registros.forEach((registro, i) => {
+          const item = document.createElement("div");
+          item.className = "historial-item";
+          item.innerHTML = `<strong>👤</strong> ${registro.nombre}<br><strong>Motivo:</strong> ${registro.motivo}<br><strong>Monto:</strong> ${registro.monto} USDT<br><strong>Fecha:</strong> ${registro.dia} <button onclick='eliminarRegistroHistorial(${i})' title='Eliminar' style='background:none;border:none;cursor:pointer;font-size:18px;color:#e74c3c;margin-left:8px;'>🗑️</button>`;
+          document.getElementById("historial").appendChild(item);
+        });
+        actualizarResumenHoras();
+      }
+    }
+
+    // Botón admin
+    document.getElementById('adminBtn').onclick = function() {
+      const clave = prompt('Clave de administrador:');
+      if(clave !== '123') { alert('Clave incorrecta'); return; }
+      mostrarPanelAdmin();
+    };
+    document.getElementById('closeAdminModal').onclick = function() {
+      document.getElementById('adminModal').style.display = 'none';
+    };
+    function mostrarPanelAdmin() {
+      // Combinar registros_globales y historial_registros
+      let globales = JSON.parse(localStorage.getItem('registros_globales') || '[]');
+      const historico = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      // Unir y evitar duplicados simples por nombre+fecha+inicio
+      const todos = [...globales];
+      historico.forEach(r => {
+        if (!todos.some(g => g.nombre === r.nombre && g.dia === r.dia && g.inicio === r.inicio)) {
+          todos.push({
+            nombre: r.nombre,
+            motivo: r.motivo,
+            monto: r.monto,
+            inicio: r.inicio,
+            fin: r.fin,
+            duracion: r.duracion,
+            fecha: r.dia || r.fecha
+          });
+        }
+      });
+      // Mostrar registros globales centrados y separados por líneas
+      let globalesHtml = `<div style='display:flex;flex-direction:column;align-items:center;width:100%;margin-bottom:18px;'>`;
+      globales.forEach((r, idx) => {
+        globalesHtml += `<div style='width:100%;max-width:700px;text-align:center;padding:14px 0;border-bottom:1.5px solid #e3e8ee;'>`;
+        globalesHtml += `<div style='font-size:17px;font-weight:bold;'>👤 ${r.nombre||'-'}</div>`;
+        globalesHtml += `<div><b>Motivo:</b> ${r.motivo||'-'} | <b>Fecha:</b> ${r.fecha||'-'} | <b>Monto:</b> ${r.monto ? r.monto + ' USDT' : '-'}</div>`;
+        if (r.duracion) globalesHtml += `<div><b>Duración:</b> ${r.duracion}</div>`;
+        if (r.inicio && r.fin) globalesHtml += `<div><b>⏰</b> ${r.inicio} - ${r.fin}</div>`;
+        globalesHtml += `</div>`;
+      });
+      globalesHtml += `</div>`;
+      // Resumen por persona
+      const resumen = {};
+      let totalMin = 0;
+      todos.forEach(r => {
+        if(!resumen[r.nombre]) resumen[r.nombre] = {min:0, count:0};
+        if(r.duracion) {
+          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+          if(match) {
+            const min = parseInt(match[1])*60 + parseInt(match[2]);
+            resumen[r.nombre].min += min;
+            totalMin += min;
+          }
+        }
+        resumen[r.nombre].count++;
+      });
+      // Mejor presentación del resumen
+      let resumenHtml = `<div style='display:flex;align-items:center;gap:32px;flex-wrap:wrap;margin-bottom:18px;'>
+        <div style='flex:1;'>
+          <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
+          <ul style='margin:0 0 0 18px;padding:0;'>`;
+      Object.entries(resumen).forEach(([nombre, data]) => {
+        const h = Math.floor(data.min/60), m = data.min%60;
+        resumenHtml += `<li style='margin-bottom:2px;'><b>${nombre}</b>: ${h}h ${m}m <span style='color:#888;font-size:13px;'>(${data.count} registros)</span></li>`;
+      });
+      resumenHtml += '</ul></div>';
+      // Equivalencia en USDT
+      let totalUSDT = (totalMin * 0.025).toFixed(3);
+      resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;'>
+        <span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>
+        <span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>
+        <span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>
+      </div></div>`;
+      // Botón para eliminar todos los registros globales
+      let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' style='background:#e74c3c;color:#fff;font-weight:bold;padding:8px 18px;border:none;border-radius:8px;cursor:pointer;font-size:16px;margin-bottom:16px;display:block;'>🗑️ Eliminar todos los registros</button>`;
+      document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml + globalesHtml;
+      // Tabla de registros con columna Contingencia
+      let tabla = `<table style='width:100%;font-size:14px;border-collapse:collapse;margin-top:10px;'><tr style='background:#e3e8ee;'><th>Nombre</th><th>Motivo</th><th>Monto</th><th>Contingencia</th><th>Inicio</th><th>Fin</th><th>Duración</th><th>Fecha</th></tr>`;
+      todos.forEach((r) => {
+        tabla += `<tr><td>${r.nombre||''}</td><td>${r.motivo||''}</td><td>${r.monto ? r.monto + ' USDT' : ''}</td><td>${r.contingencia ? r.contingencia + ' USDT' : '0 USDT'}</td><td>${r.inicio||''}</td><td>${r.fin||''}</td><td>${r.duracion||''}</td><td>${r.fecha||''}</td></tr>`;
+      });
+      tabla += '</table>';
+      document.getElementById('adminRegistros').innerHTML = tabla;
+      document.getElementById('adminModal').style.display = 'flex';
+    }
+    // Eliminar todos los registros globales
+    window.eliminarTodosRegistrosGlobales = function() {
+      if(confirm('¿Seguro que deseas eliminar TODOS los registros?')) {
+        localStorage.removeItem('registros_globales');
+        mostrarPanelAdmin();
+      }
+    }
+    // Guardar registro si la página se cierra con inicio pendiente
+    window.addEventListener('beforeunload', function() {
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) {
+        try {
+          const data = JSON.parse(inicioPend);
+          if (data && data.inicio) {
+            const inicioDate = new Date(data.inicio);
+            const finDate = obtenerHoraLocalVE();
+            const duracionMs = finDate - inicioDate;
+            const segundos = Math.floor(duracionMs / 1000);
+            const minutos = Math.floor(segundos / 60);
+            const horas = Math.floor(minutos / 60);
+            const restoMin = minutos % 60;
+            const restoSeg = segundos % 60;
+            const duracionTexto = `${horas}h ${restoMin}m ${restoSeg}s`;
+            const hoy = obtenerHoraLocalVE();
+            const dia = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+            const registro = {
+              nombre: data.nombre,
+              motivo: data.motivo,
+              dia,
+              inicio: formatearHora(inicioDate),
+              fin: formatearHora(finDate),
+              duracion: duracionTexto
+            };
+            // Verificar si ya existe un registro igual
+            let registros = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+            const existe = registros.some(r => r.nombre === registro.nombre && r.motivo === registro.motivo && r.inicio === registro.inicio && r.dia === registro.dia);
+            if (!existe) {
+              registros.push(registro);
+              localStorage.setItem('historial_registros', JSON.stringify(registros));
+              // Guardar en global
+              guardarRegistroGlobal({
+                nombre: data.nombre,
+                motivo: data.motivo,
+                inicio: formatearHora(inicioDate),
+                fin: formatearHora(finDate),
+                duracion: duracionTexto,
+                fecha: dia
+              });
+            }
+            // Limpiar inicio pendiente
+            localStorage.removeItem('inicio_pendiente');
+          }
+        } catch(e) {}
+      }
+    });
+  </script>
+
+  <div class="container">
+    <div class="card">
+      <h1>Contabilizador de Horas</h1>
+
+      <div class="nombre-container">
+        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+        <input type="text" id="motivo" name="motivo" placeholder="Motivo">
+        <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+          <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
+          <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:34px;" min="0" step="any">
+          <button onclick="agregarMotivoTrabajo()" style="background:#4A90E2;color:white;font-weight:bold;border:none;padding:8px 0px;border-radius:6px;cursor:pointer;width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
+        </div>
+        <button id="contingenciaBtn" style="margin-top:8px;margin-bottom:8px;background:#f7b731;color:#222;font-weight:bold;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;">Sumar 10 USDT por contingencia</button>
+      </div>
+
+      <button onclick="marcarInicio()">Marcar Inicio</button>
+      <button onclick="marcarFin()">Marcar Fin</button>
+      <button onclick="eliminarHistorial()">Eliminar Historial</button>
+      <button onclick="enviarHorasExtras()">Enviar</button>
+
+      <div class="info">
+        <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
+        <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
+        <p><strong>Duración:</strong> <span id="duracion">-</span></p>
+      </div>
+
+      <div class="historial" id="historial">
+        <strong>Histórico de tiempos:</strong>
+        <div id="resumenHoras"></div>
+      </div>
+    </div>
+  </div>
+  <button id="darkModeToggle" title="Alternar modo oscuro/claro" style="position:fixed;top:18px;right:24px;z-index=200;font-size:22px;padding:7px 13px;border-radius:50%;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;background:#fff;transition:background 0.4s,color 0.4s;">🌙</button>
+  <button id="adminBtn" title="Administrador" style="position:fixed;bottom:24px;right:24px;z-index=300;font-size:22px;padding:10px 16px;border-radius:50%;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;background:#4A90E2;color:#fff;">🔑</button>
+  <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
+    <div style="background:#fff;color:#23272e;padding:32px 24px 24px 24px;border-radius:16px;max-width:700px;width:95vw;max-height:90vh;overflow-y:auto;position:relative;">
+      <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
+      <h2 style="margin-top:0">Panel de Administración</h2>
+      <div id="adminResumen"></div>
+      <div id="adminRegistros" style="margin-top:18px;"></div>
+    </div>
+  </div>
+</body>
+</html>
