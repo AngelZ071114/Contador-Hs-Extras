@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contabilizador de Horas</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .nombre-container {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #357ABD;
+    }
+
+    .info p {
+      font-size: 16px;
+      color: #555;
+      margin: 10px 0;
+    }
+
+    .info span {
+      font-weight: bold;
+      color: #222;
+    }
+
+    .historial {
+      margin-top: 30px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+
+    .historial-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 8px;
+    }
+    .historial-item {
+      font-size: 15px;
+      margin-bottom: 18px;
+      background: linear-gradient(120deg, #f7fafd 80%, #e3e8ee 100%);
+      padding: 16px 20px 12px 20px;
+      border-radius: 14px;
+      border: none;
+      color: #23272e;
+      box-shadow: 0 4px 18px #4a90e220;
+      position: relative;
+      transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .historial-item strong {
+      color: #357abd;
+      font-size: 17px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .historial-item .historial-motivo {
+      color: #f97f51;
+      font-weight: 600;
+      font-size: 15px;
+      margin-left: 2px;
+    }
+    .historial-item .historial-monto {
+      color: #43b97b;
+      font-weight: 600;
+      font-size: 15px;
+      margin-left: 2px;
+    }
+    .historial-item .historial-fecha {
+      color: #888;
+      font-size: 13px;
+      margin-top: 2px;
+      display: block;
+    }
+    .historial-item .historial-extra {
+      color: #357abd;
+      font-size: 14px;
+      margin-top: 2px;
+      display: block;
+    }
+    .manual-dark .historial-item {
+      background: linear-gradient(120deg, #23272e 80%, #2d3a4a 100%) !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 4px 18px #0006 !important;
+      border: none !important;
+    }
+    .manual-dark .historial-item strong {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-motivo {
+      color: #f7b731 !important;
+    }
+    .manual-dark .historial-item .historial-monto {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-fecha {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark .historial-item .historial-extra {
+      color: #43b7e9 !important;
+    }
+    /* Estilos para modo oscuro */
+    body.manual-dark {
+      background: #181c20 !important;
+      color: #e0e6ef !important;
+      transition: background 0.5s, color 0.5s;
+    }
+    .manual-dark .card {
+      background: #23272e !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25) !important;
+    }
+    .manual-dark input[type="text"],
+    .manual-dark input[type="number"] {
+      background: rgba(44, 62, 80, 0.85) !important;
+      color: #eaf6fb !important;
+      border: 1.5px solid #4a90e2 !important;
+      box-shadow: 0 2px 8px #0004 !important;
+      outline: none !important;
+      font-weight: 400;
+      transition: background 0.3s, border 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .manual-dark input[type="text"]::placeholder,
+    .manual-dark input[type="number"]::placeholder {
+      color: #b3c6e0 !important;
+      opacity: 0.8;
+    }
+    .manual-dark input[type="text"]:focus,
+    .manual-dark input[type="number"]:focus {
+      border: 2px solid #4a90e2 !important;
+      box-shadow: 0 0 0 3px #4a90e255 !important;
+      background: rgba(44, 62, 80, 1) !important;
+      color: #fff !important;
+    }
+    .manual-dark button {
+      background-color: #3b6cb7 !important; /* azul principal */
+      color: #fff !important;
+      box-shadow: 0 2px 12px #1a1a2a33 !important;
+      border: none !important;
+    }
+    .manual-dark button:hover {
+      background-color: #5fa8d3 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px #1a1a2a55 !important;
+    }
+    .manual-dark #contingenciaBtn {
+      background: linear-gradient(90deg, #f7b731 60%, #f97f51 100%) !important;
+      color: #23272e !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #f7b73155 !important;
+    }
+    .manual-dark #contingenciaBtn:hover {
+      background: linear-gradient(90deg, #f97f51 60%, #f7b731 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #f97f5155 !important;
+    }
+    .manual-dark button[onclick*="eliminarHistorial"] {
+      background: linear-gradient(90deg, #e74c3c 60%, #f97f51 100%) !important;
+      color: #fff !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #e74c3c55 !important;
+    }
+    .manual-dark button[onclick*="eliminarHistorial"]:hover {
+      background: linear-gradient(90deg, #f97f51 60%, #e74c3c 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px #e74c3c77 !important;
+    }
+    .manual-dark button[onclick*="enviarHorasExtras"] {
+      background: linear-gradient(90deg, #43e97b 60%, #38f9d7 100%) !important;
+      color: #23272e !important;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #43e97b55 !important;
+    }
+    .manual-dark button[onclick*="enviarHorasExtras"]:hover {
+      background: linear-gradient(90deg, #38f9d7 60%, #43e97b 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #38f9d777 !important;
+    }
+    .manual-dark .info p {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark .info span {
+      color: #e0e6ef !important;
+    }
+    .manual-dark .historial {
+      border-top: 1px solid #3b4a5a !important;
+    }
+    .manual-dark .historial-item {
+      background: #23272e !important;
+      border: 1px solid #3b4a5a !important;
+      color: #e0e6ef !important;
+      box-shadow: 0 1px 6px #0004 !important;
+    }
+    .manual-dark .historial-item strong {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-motivo {
+      color: #f7b731 !important;
+    }
+    .manual-dark .historial-item .historial-monto {
+      color: #43e97b !important;
+    }
+    .manual-dark .historial-item .historial-fecha {
+      color: #b3c6e0 !important;
+    }
+    .manual-dark h1 {
+      color: #e0e6ef !important;
+      text-shadow: 0 2px 8px #1a1a1a55, 0 1px 0 #3b4a5a;
+      letter-spacing: 1.5px;
+    }
+    #darkModeToggle {
+      transition: background 0.4s, color 0.4s;
+    }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import emailjs from 'https://cdn.skypack.dev/@emailjs/browser';
+    emailjs.init("zVacNjGjZLO-ALRSe");
+    // --- Lógica JS principal ---
+    let inicio = null;
+    let registros = [];
+
+    function obtenerHoraLocalVE(date = new Date()) {
+      return new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    }
+
+    function formatearHora(date) {
+      return date.toLocaleTimeString("es-VE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    window.marcarInicio = function() {
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      inicio = obtenerHoraLocalVE();
+      document.getElementById("horaInicio").textContent = formatearHora(inicio);
+      document.getElementById("horaFin").textContent = "-";
+      document.getElementById("duracion").textContent = "-";
+    }
+
+    window.marcarFin = function() {
+      if (!inicio) {
+        alert("Primero marca la hora de inicio.");
+        return;
+      }
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!nombre) {
+        alert("Por favor, ingresa un nombre.");
+        return;
+      }
+      const motivo = document.getElementById("motivo").value.trim();
+      const fin = obtenerHoraLocalVE();
+      document.getElementById("horaFin").textContent = formatearHora(fin);
+      const duracionMs = fin - inicio;
+      const segundos = Math.floor(duracionMs / 1000);
+      const minutos = Math.floor(segundos / 60);
+      const horas = Math.floor(minutos / 60);
+      const restoMin = minutos % 60;
+      const restoSeg = segundos % 60;
+      const duracionTexto = `${horas}h ${restoMin}m ${restoSeg}s`;
+      document.getElementById("duracion").textContent = duracionTexto;
+      // Obtener la fecha actual en formato YYYY-MM-DD
+      const hoy = obtenerHoraLocalVE();
+      const dia = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+      // Verifica si la contingencia fue aplicada
+      // const contingenciaAplicada = localStorage.getItem('contingencia_aplicada') === '1';
+      const registro = {
+        nombre,
+        motivo: motivo,
+        dia,
+        inicio: formatearHora(inicio),
+        fin: formatearHora(fin),
+        duracion: duracionTexto
+      };
+      registros.push(registro);
+      localStorage.setItem('historial_registros', JSON.stringify(registros));
+      const item = document.createElement("div");
+      item.className = "historial-item";
+      const fechaDMY = `${registro.dia.split('-')[2]}-${registro.dia.split('-')[1]}-${registro.dia.split('-')[0]}`;
+      item.innerHTML = `<strong>👤</strong> ${registro.nombre}<br>
+                        <span class="historial-motivo">${registro.motivo}</span><br>
+                        <span class="historial-fecha">${fechaDMY}</span>`;
+      if (registro.inicio) {
+        item.innerHTML += `<br><span><strong>⏰</strong> ${registro.inicio} - ${registro.fin}</span>`;
+      }
+      if (registro.duracion) {
+        item.innerHTML += `<br><span><strong>⏳</strong> ${registro.duracion}</span>`;
+      }
+      document.getElementById("historial").appendChild(item);
+      actualizarResumenHoras();
+      inicio = null;
+    }
+
+    window.eliminarHistorial = function() {
+      if (confirm("¿Estás seguro de que quieres borrar todo el historial?")) {
+        registros = [];
+        localStorage.removeItem('historial_registros');
+        localStorage.removeItem('contingencia_aplicada');
+        localStorage.removeItem('monto_pagar_extra');
+        document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+        actualizarResumenHoras();
+      }
+    }
+
+    window.enviarHorasExtras = function() {
+      if (registros.length === 0) {
+        alert("No hay registros en el historial.");
+        return;
+      }
+      let historialHtml = "";
+      registros.forEach(item => {
+        let fechaDMY = '-';
+        if (item.dia) {
+          const [y, m, d] = item.dia.split('-');
+          fechaDMY = `${d}-${m}-${y}`;
+        }
+        let html = `<p>👤 <strong>${item.nombre}</strong><br>`;
+        html += `Motivo: ${item.motivo ? item.motivo : '-'}<br>`;
+        if (item.monto) {
+          html += `Monto: ${item.monto} USDT<br>`;
+        }
+        html += `Fecha: ${fechaDMY}`;
+        if (item.inicio) {
+          html += `<br>Inicio: ${item.inicio}`;
+        }
+        if (item.fin) {
+          html += `<br>Fin: ${item.fin}`;
+        }
+        if (item.duracion) {
+          html += `<br>Duración: ${item.duracion}`;
+        }
+        html += `</p>`;
+        historialHtml += html;
+      });
+      // Calcula el resumen de horas trabajadas
+      let totalMin = 0;
+      registros.forEach(r => {
+        if (r.duracion) {
+          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+          if (match) {
+            totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+        }
+      });
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      let monto = totalMin * 0.025;
+      if (localStorage.getItem('contingencia_aplicada') === '1') {
+        monto += 10;
+      }
+      // Sumar monto a pagar de todos los registros
+      registros.forEach(r => {
+        if (r.monto && !isNaN(r.monto)) {
+          monto += parseFloat(r.monto);
+        }
+      });
+      const resumen = `<p><strong>Total de horas trabajadas: ${horas}h ${mins}m (Monto: ${monto.toFixed(3)} USDT)</strong></p>`;
+      const templateParams = {
+        historial: resumen + historialHtml
+      };
+      emailjs.send("service_qitwmhc", "template_ph39uek", templateParams)
+      .then(() => {
+        alert("✅ El historial ha sido enviado exitosamente a tu correo.");
+      })
+      .catch((error) => {
+        alert("Error al enviar: " + error.text);
+      });
+    }
+
+    // Botón de contingencia
+    document.getElementById("contingenciaBtn").addEventListener('click', function() {
+      if (!inicio) {
+        alert('Debes iniciar las horas extras.');
+        return;
+      }
+      let extra = parseFloat(localStorage.getItem('monto_pagar_extra') || '0');
+      extra += 10;
+      localStorage.setItem('monto_pagar_extra', extra);
+      actualizarResumenHoras();
+      alert('Se han sumado 10 USDT por contingencia al monto total.');
+    });
+
+    // Modo oscuro manual
+    function aplicarModoOscuro() {
+      const dark = localStorage.getItem('modo_oscuro') === '1';
+      document.body.classList.toggle('manual-dark', dark);
+      document.getElementById('darkModeToggle').textContent = dark ? '☀️' : '🌙';
+      document.getElementById('darkModeToggle').style.background = dark ? '#23272e' : '#fff';
+      document.getElementById('darkModeToggle').style.color = dark ? '#e0e6ef' : '#23272e';
+    }
+    document.getElementById('darkModeToggle').addEventListener('click', function() {
+      const dark = !(localStorage.getItem('modo_oscuro') === '1');
+      localStorage.setItem('modo_oscuro', dark ? '1' : '0');
+      aplicarModoOscuro();
+    });
+    // Al cargar la página
+    aplicarModoOscuro();
+
+    // Restaurar estado al cargar
+    if (localStorage.getItem('contingencia_aplicada') === '1') {
+      // contingenciaCheckbox.checked = true;
+    } else {
+      // contingenciaCheckbox.checked = false;
+    }
+
+    function actualizarResumenHoras() {
+      // Leer siempre los registros actualizados desde localStorage
+      let registrosActualizados = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      let totalMin = 0;
+      registrosActualizados.forEach(r => {
+        // Solo sumar si existe la propiedad 'duracion'
+        if (r.duracion) {
+          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+          if (match) {
+            totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+        }
+      });
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      let monto = totalMin * 0.025;
+      // Sumar monto a pagar de todos los registros
+      registrosActualizados.forEach(r => {
+        if (r.monto && !isNaN(r.monto)) {
+          monto += parseFloat(r.monto);
+        }
+      });
+      // Sumar monto extra de contingencia
+      let extra = parseFloat(localStorage.getItem('monto_pagar_extra') || '0');
+      monto += extra;
+      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
+    }
+
+    // Al cargar la página, restaurar historial desde localStorage
+    window.addEventListener('DOMContentLoaded', () => {
+      const guardados = localStorage.getItem('historial_registros');
+      if (guardados) {
+        registros = JSON.parse(guardados);
+        registros.forEach(registro => {
+          const item = document.createElement("div");
+          item.className = "historial-item";
+          let fechaDMY = '-';
+          if (registro.dia) {
+            const [y, m, d] = registro.dia.split('-');
+            fechaDMY = `${d}-${m}-${y}`;
+          }
+          let html = `<div class='historial-item'>`;
+          html += `<strong>👤</strong> ${registro.nombre}`;
+          if (registro.motivo) {
+            html += `<span class='historial-motivo'> | ${registro.motivo}</span>`;
+          }
+          if (registro.monto) {
+            html += `<span class='historial-monto'> | ${registro.monto} USDT</span>`;
+          }
+          html += `<span class='historial-fecha'>📅 ${fechaDMY}</span>`;
+          if (registro.inicio && registro.fin) {
+            html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
+          }
+          if (registro.duracion) {
+            html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
+          }
+          html += `</div>`;
+          item.innerHTML = html;
+          document.getElementById("historial").appendChild(item);
+        });
+      }
+      actualizarResumenHoras();
+    });
+
+    // Nueva función para agregar motivo de trabajo al historial
+    window.agregarMotivoTrabajo = function() {
+      const motivoTrabajo = document.getElementById("motivoTrabajo").value.trim();
+      const montoPagar = document.getElementById("montoPagar").value.trim();
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!motivoTrabajo) {
+        alert("Por favor, ingresa el motivo del trabajo.");
+        return;
+      }
+      if (!montoPagar || isNaN(montoPagar)) {
+        alert("Por favor, ingresa solo números en el monto a pagar.");
+        return;
+      }
+      if (!nombre) {
+        alert("Por favor, ingresa tu nombre.");
+        return;
+      }
+      // Guardar en el historial principal solo los campos requeridos
+      let registros = JSON.parse(localStorage.getItem('historial_registros') || '[]');
+      const hoy = new Date();
+      const fecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+      const registro = {
+        nombre,
+        motivo: motivoTrabajo,
+        monto: montoPagar,
+        dia: fecha
+      };
+      registros.push(registro);
+      localStorage.setItem('historial_registros', JSON.stringify(registros));
+      // Mostrar en el historial
+      const item = document.createElement("div");
+      item.className = "historial-item";
+      item.innerHTML = `<strong>👤</strong> ${nombre}<br><strong>Motivo:</strong> ${motivoTrabajo}<br><strong>Monto:</strong> ${montoPagar} USDT<br><strong>Fecha:</strong> ${fecha}`;
+      document.getElementById("historial").appendChild(item);
+      document.getElementById("motivoTrabajo").value = "";
+      document.getElementById("montoPagar").value = "";
+      alert("Refresca la página para ver el monto actualizado");
+    }
+  </script>
+
+  <div class="container">
+    <div class="card">
+      <h1>Contabilizador de Horas</h1>
+
+      <div class="nombre-container">
+        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+        <input type="text" id="motivo" name="motivo" placeholder="Motivo">
+        <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+          <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
+          <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:34px;" min="0" step="any">
+          <button onclick="agregarMotivoTrabajo()" style="background:#4A90E2;color:white;font-weight:bold;border:none;padding:8px 0px;border-radius:6px;cursor:pointer;width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
+        </div>
+        <button id="contingenciaBtn" style="margin-top:8px;margin-bottom:8px;background:#f7b731;color:#222;font-weight:bold;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;">Sumar 10 USDT por contingencia</button>
+      </div>
+
+      <button onclick="marcarInicio()">Marcar Inicio</button>
+      <button onclick="marcarFin()">Marcar Fin</button>
+      <button onclick="eliminarHistorial()">Eliminar Historial</button>
+      <button onclick="enviarHorasExtras()">Enviar</button>
+
+      <div class="info">
+        <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
+        <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
+        <p><strong>Duración:</strong> <span id="duracion">-</span></p>
+      </div>
+
+      <div class="historial" id="historial">
+        <strong>Histórico de tiempos:</strong>
+        <div id="resumenHoras"></div>
+      </div>
+    </div>
+  </div>
+  <button id="darkModeToggle" title="Alternar modo oscuro/claro" style="position:fixed;top:18px;right:24px;z-index:200;font-size:22px;padding:7px 13px;border-radius:50%;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;background:#fff;transition:background 0.4s,color 0.4s;">🌙</button>
+</body>
+</html>
