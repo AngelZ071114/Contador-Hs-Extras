@@ -103,31 +103,28 @@
       transform: scale(1.08);
       box-shadow: 0 4px 16px #4a90e220;
     }
-    /* Botón eliminar (rojo) */
-    .btn-eliminar, .btn[style*="background:#e74c3c"] {
+    .btn-eliminar {
       background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
       color: #fff !important;
       box-shadow: 0 2px 8px #e74c3c40;
     }
-    .btn-eliminar:hover, .btn[style*="background:#e74c3c"]:hover {
+    .btn-eliminar:hover {
       background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
       color: #fff !important;
       transform: translateY(-2px) scale(1.04);
       box-shadow: 0 4px 16px #e74c3c60;
     }
-    /* Botón enviar (verde) */
-    .btn-enviar, .btn[style*="background:#43b97b"] {
+    .btn-enviar {
       background: linear-gradient(90deg, #43b97b 60%, #2ecc71 100%) !important;
       color: #fff !important;
       box-shadow: 0 2px 8px #43b97b40;
     }
-    .btn-enviar:hover, .btn[style*="background:#43b97b"]:hover {
+    .btn-enviar:hover {
       background: linear-gradient(90deg, #2ecc71 60%, #43b97b 100%) !important;
       color: #fff !important;
       transform: translateY(-2px) scale(1.04);
       box-shadow: 0 4px 16px #43b97b60;
     }
-    /* Modo oscuro: los botones mantienen sus colores personalizados */
     body.manual-dark .btn,
     body.manual-dark .btn-contingencia,
     body.manual-dark .btn-admin,
@@ -165,7 +162,6 @@
     .historial-item .historial-monto { color: #43b97b; font-weight: 600; font-size: 15px; margin-left: 2px; }
     .historial-item .historial-fecha { color: #888; font-size: 13px; margin-top: 2px; display: block; }
     .historial-item .historial-extra { color: #357abd; font-size: 14px; margin-top: 2px; display: block; }
-    /* Modo oscuro */
     body.manual-dark { background: #181c20 !important; color: #e0e6ef !important; }
     .manual-dark .card { background: #23272e !important; color: #e0e6ef !important; box-shadow: 0 10px 25px rgba(0,0,0,0.25) !important; }
     .manual-dark input[type="text"], .manual-dark input[type="number"] { background: #2c3e50 !important; color: #eaf6fb !important; border: 1.5px solid #4a90e2 !important; }
@@ -207,7 +203,6 @@
 
     // --- Utilidades ---
     let inicio = null;
-    let registros = [];
 
     function obtenerHoraLocalVE(date = new Date()) {
       return new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
@@ -258,11 +253,7 @@
       const dia = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
       const registro = { nombre, motivo, dia, inicio: formatearHora(inicio), fin: formatearHora(fin), duracion: duracionTexto };
       if (monto > 0) registro.monto = monto.toFixed(2);
-      registros.push(registro);
-      localStorage.setItem('historial_registros', JSON.stringify(registros));
       db.ref('registros').push(registro); // Guardar en Firebase
-      mostrarHistorial();
-      actualizarResumenHoras();
       inicio = null;
       localStorage.removeItem('inicio_pendiente');
     };
@@ -278,10 +269,7 @@
       const hoy = new Date();
       const fecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
       const registro = { nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha };
-      registros.push(registro);
-      localStorage.setItem('historial_registros', JSON.stringify(registros));
       db.ref('registros').push(registro); // Guardar en Firebase
-      mostrarHistorial();
       document.getElementById("motivoTrabajo").value = "";
       document.getElementById("montoPagar").value = "";
       alert("Refresca la página para ver el monto actualizado");
@@ -300,15 +288,9 @@
     });
 
     // --- Historial y resumen en tiempo real desde Firebase ---
-    db.ref('registros').on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const registrosFirebase = Object.values(data);
-      mostrarHistorialFirebase(registrosFirebase);
-      actualizarResumenHorasFirebase(registrosFirebase);
-    });
-
     function mostrarHistorialFirebase(registros) {
-      document.getElementById("historial").innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+      const historial = document.getElementById("historial");
+      historial.innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
       registros.forEach((registro) => {
         const item = document.createElement("div");
         item.className = "historial-item";
@@ -324,26 +306,31 @@
         if (registro.inicio && registro.fin) html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
         if (registro.duracion) html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
         item.innerHTML = html;
-        document.getElementById("historial").appendChild(item);
+        historial.appendChild(item);
       });
     }
 
     function actualizarResumenHorasFirebase(registros) {
-      let totalMin = 0;
+      let totalMin = 0, monto = 0;
       registros.forEach(r => {
         if (r.duracion) {
           const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
           if (match) totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
         }
-      });
-      const horas = Math.floor(totalMin / 60);
-      const mins = totalMin % 60;
-      let monto = totalMin * 0.025;
-      registros.forEach(r => {
         if (r.monto && !isNaN(r.monto)) monto += parseFloat(r.monto);
       });
+      monto += totalMin * 0.025;
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
       document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
     }
+
+    db.ref('registros').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      const registrosFirebase = Object.values(data);
+      mostrarHistorialFirebase(registrosFirebase);
+      actualizarResumenHorasFirebase(registrosFirebase);
+    });
 
     // --- Modo oscuro ---
     function aplicarModoOscuro() {
@@ -369,7 +356,6 @@
       document.getElementById('adminModal').style.display = 'none';
     };
 
-    // --- Panel admin: resumen general (puedes optimizarlo más si lo deseas) ---
     function mostrarPanelAdmin() {
       db.ref('registros').once('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -442,7 +428,7 @@
           + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
           + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
         + `</div>`;
-        let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn' style='background:#e74c3c;color:#fff;font-weight:bold;'>🗑️ Eliminar todos los registros</button>`;
+        let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
         document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
         document.getElementById('adminRegistros').innerHTML = '';
         document.getElementById('adminModal').style.display = 'flex';
@@ -472,6 +458,15 @@
         } catch(e) {}
       }
       aplicarModoOscuro();
+
+      window.eliminarHistorial = function() {
+        if (confirm('¿Seguro que deseas eliminar tu historial local y remoto?')) {
+          localStorage.removeItem('historial_registros');
+          db.ref('registros').remove();
+          document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+          alert('Historial eliminado.');
+        }
+      };
     });
   </script>
 
@@ -490,8 +485,8 @@
       </div>
       <button onclick="marcarInicio()" class="btn">Marcar Inicio</button>
       <button onclick="marcarFin()" class="btn">Marcar Fin</button>
-      <button onclick="eliminarHistorial()" class="btn btn-eliminar" style="background:#e74c3c;">Eliminar Historial</button>
-      <button onclick="enviarHorasExtras()" class="btn btn-enviar" style="background:#43b97b;">Enviar</button>
+      <button onclick="eliminarHistorial()" class="btn btn-eliminar">Eliminar Historial</button>
+      <button onclick="enviarHorasExtras()" class="btn btn-enviar">Enviar</button>
       <div class="info">
         <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
         <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
