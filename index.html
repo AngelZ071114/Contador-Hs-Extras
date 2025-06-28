@@ -24,6 +24,7 @@
       padding: 10px; width: 100%; font-size: 16px;
       border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px;
       background: #fff; color: #23272e; transition: background 0.3s, border 0.3s, color 0.3s;
+      box-sizing: border-box;
     }
     .btn {
       background: linear-gradient(90deg, #4A90E2 60%, #357ABD 100%);
@@ -51,7 +52,6 @@
       font-weight: bold;
       border: none;
       box-shadow: 0 2px 8px #f7b73140;
-      transition: background 0.3s, color 0.3s, box-shadow 0.3s, transform 0.2s;
     }
     .btn-contingencia:hover {
       background: linear-gradient(90deg, #f97f51 60%, #f7b731 100%) !important;
@@ -179,6 +179,15 @@
     .manual-dark .historial-item .historial-fecha { color: #b3c6e0 !important; }
     .manual-dark h1 { color: #e0e6ef !important; }
     #darkModeToggle { transition: background 0.4s, color 0.4s; }
+
+    /* Animación para el modal de login */
+    #loginModal > div {
+      animation: loginPop 0.6s cubic-bezier(.23,1.12,.56,1.01);
+    }
+    @keyframes loginPop {
+      0% { transform: scale(0.7) translateY(40px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -202,14 +211,60 @@
     const db = firebase.database();
 
     // --- Utilidades ---
-    let inicio = null;
+    let inicio = null, usuarioActual = null, rolActual = null;
 
-    function obtenerHoraLocalVE(date = new Date()) {
-      return new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    const obtenerHoraLocalVE = (date = new Date()) =>
+      new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    const formatearHora = date =>
+      date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    // --- Login ---
+    function mostrarLogin() {
+      document.getElementById('loginModal').style.display = 'flex';
     }
-    function formatearHora(date) {
-      return date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    function ocultarLogin() {
+      document.getElementById('loginModal').style.display = 'none';
     }
+    function setAdminBtnByRol(rol) {
+      document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
+    }
+    document.getElementById('loginBtn').onclick = function() {
+      const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
+      const clave = document.getElementById('loginClave').value.trim();
+      db.ref('usuarios/' + usuario).once('value', snap => {
+        const data = snap.val();
+        if (data && data.clave === clave) {
+          usuarioActual = usuario;
+          rolActual = data.rol;
+          ocultarLogin();
+          document.getElementById('nombre').value = usuario;
+          setAdminBtnByRol(rolActual);
+        } else {
+          document.getElementById('loginError').textContent = 'Usuario o clave incorrectos';
+          document.getElementById('loginError').style.display = 'block';
+        }
+      });
+    };
+    ['loginUsuario', 'loginClave'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('loginBtn').click();
+      });
+    });
+
+    // --- Modo oscuro ---
+    function aplicarModoOscuro() {
+      const dark = localStorage.getItem('modo_oscuro') === '1';
+      document.body.classList.toggle('manual-dark', dark);
+      const btn = document.getElementById('darkModeToggle');
+      btn.textContent = dark ? '☀️' : '🌙';
+      btn.style.background = dark ? '#23272e' : '#fff';
+      btn.style.color = dark ? '#e0e6ef' : '#23272e';
+    }
+    document.getElementById('darkModeToggle').onclick = () => {
+      const dark = !(localStorage.getItem('modo_oscuro') === '1');
+      localStorage.setItem('modo_oscuro', dark ? '1' : '0');
+      aplicarModoOscuro();
+    };
 
     // --- Inicio y Fin ---
     window.marcarInicio = function() {
@@ -222,13 +277,11 @@
       document.getElementById("duracion").textContent = "-";
       localStorage.setItem('inicio_pendiente', JSON.stringify({ nombre, motivo, inicio: inicio.toISOString() }));
     };
-
     window.marcarFin = function() {
       if (!inicio) return alert("Primero marca la hora de inicio.");
       const nombre = document.getElementById("nombre").value.trim();
       if (!nombre) return alert("Por favor, ingresa un nombre.");
-      const motivoOriginal = document.getElementById("motivo").value.trim();
-      let motivo = motivoOriginal;
+      let motivo = document.getElementById("motivo").value.trim();
       let monto = 0;
       let inicioPend = localStorage.getItem('inicio_pendiente');
       let contingencia = false;
@@ -253,7 +306,7 @@
       const dia = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
       const registro = { nombre, motivo, dia, inicio: formatearHora(inicio), fin: formatearHora(fin), duracion: duracionTexto };
       if (monto > 0) registro.monto = monto.toFixed(2);
-      db.ref('registros').push(registro); // Guardar en Firebase
+      db.ref('registros').push(registro);
       inicio = null;
       localStorage.removeItem('inicio_pendiente');
     };
@@ -269,14 +322,14 @@
       const hoy = new Date();
       const fecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
       const registro = { nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha };
-      db.ref('registros').push(registro); // Guardar en Firebase
+      db.ref('registros').push(registro);
       document.getElementById("motivoTrabajo").value = "";
       document.getElementById("montoPagar").value = "";
       alert("Refresca la página para ver el monto actualizado");
     };
 
     // --- Contingencia ---
-    document.getElementById("contingenciaBtn").addEventListener('click', function() {
+    document.getElementById("contingenciaBtn").onclick = function() {
       if (!inicio) return alert('Debes iniciar las horas extras.');
       let inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) {
@@ -285,7 +338,7 @@
         localStorage.setItem('inicio_pendiente', JSON.stringify(data));
       }
       alert('La contingencia se sumará al siguiente registro cuando marques fin.');
-    });
+    };
 
     // --- Historial y resumen en tiempo real desde Firebase ---
     function mostrarHistorialFirebase(registros) {
@@ -309,7 +362,6 @@
         historial.appendChild(item);
       });
     }
-
     function actualizarResumenHorasFirebase(registros) {
       let totalMin = 0, monto = 0;
       registros.forEach(r => {
@@ -324,7 +376,6 @@
       const mins = totalMin % 60;
       document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
     }
-
     db.ref('registros').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       const registrosFirebase = Object.values(data);
@@ -332,21 +383,7 @@
       actualizarResumenHorasFirebase(registrosFirebase);
     });
 
-    // --- Modo oscuro ---
-    function aplicarModoOscuro() {
-      const dark = localStorage.getItem('modo_oscuro') === '1';
-      document.body.classList.toggle('manual-dark', dark);
-      document.getElementById('darkModeToggle').textContent = dark ? '☀️' : '🌙';
-      document.getElementById('darkModeToggle').style.background = dark ? '#23272e' : '#fff';
-      document.getElementById('darkModeToggle').style.color = dark ? '#e0e6ef' : '#23272e';
-    }
-    document.getElementById('darkModeToggle').addEventListener('click', function() {
-      const dark = !(localStorage.getItem('modo_oscuro') === '1');
-      localStorage.setItem('modo_oscuro', dark ? '1' : '0');
-      aplicarModoOscuro();
-    });
-
-    // --- Panel admin ---
+    // --- Panel admin y gestión de usuarios ---
     document.getElementById('adminBtn').onclick = function() {
       const clave = prompt('Clave de administrador:');
       if(clave !== '123') return alert('Clave incorrecta');
@@ -355,7 +392,6 @@
     document.getElementById('closeAdminModal').onclick = function() {
       document.getElementById('adminModal').style.display = 'none';
     };
-
     function mostrarPanelAdmin() {
       db.ref('registros').once('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -429,9 +465,23 @@
           + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
         + `</div>`;
         let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
-        document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
+        let gestionUsuariosHtml = `
+          <div style="margin-bottom:18px;">
+            <h3>Gestión de usuarios</h3>
+            <input id="nuevoUsuario" placeholder="Usuario" style="margin-right:4px;">
+            <input id="nuevaClave" placeholder="Clave" type="password" style="margin-right:4px;">
+            <select id="nuevoRol" style="margin-right:4px;">
+              <option value="usuario">Usuario</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+            <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="margin-bottom:6px;">Agregar usuario</button>
+            <div id="usuariosLista"></div>
+          </div>
+        `;
+        document.getElementById('adminResumen').innerHTML = eliminarBtn + gestionUsuariosHtml + resumenHtml;
         document.getElementById('adminRegistros').innerHTML = '';
         document.getElementById('adminModal').style.display = 'flex';
+        mostrarListaUsuarios();
       });
     }
     window.eliminarTodosRegistrosGlobales = function() {
@@ -440,9 +490,44 @@
         document.getElementById('adminModal').style.display = 'none';
       }
     }
+    window.agregarUsuario = function() {
+      const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
+      const clave = document.getElementById('nuevaClave').value.trim();
+      const rol = document.getElementById('nuevoRol').value;
+      if (!usuario || !clave) return alert('Usuario y clave requeridos');
+      db.ref('usuarios/' + usuario).set({ usuario, clave, rol }, err => {
+        if (err) return alert('Error al agregar usuario');
+        document.getElementById('nuevoUsuario').value = '';
+        document.getElementById('nuevaClave').value = '';
+        mostrarListaUsuarios();
+        alert('Usuario agregado');
+      });
+    };
+    function mostrarListaUsuarios() {
+      db.ref('usuarios').once('value', snap => {
+        const data = snap.val() || {};
+        let html = '<ul style="list-style:none;padding:0;">';
+        Object.entries(data).forEach(([u, info]) => {
+          html += `<li style="margin-bottom:4px;">
+            <b>${u}</b> (${info.rol})
+            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:8px;">Eliminar</button>
+          </li>`;
+        });
+        html += '</ul>';
+        document.getElementById('usuariosLista').innerHTML = html;
+      });
+    }
+    window.eliminarUsuario = function(usuario) {
+      if (!confirm('¿Eliminar usuario ' + usuario + '?')) return;
+      db.ref('usuarios/' + usuario).remove(err => {
+        if (err) return alert('Error al eliminar');
+        mostrarListaUsuarios();
+      });
+    };
 
-    // --- Inicialización ---
+    // --- Inicialización y restauración de estado ---
     window.addEventListener('DOMContentLoaded', () => {
+      // Restaurar inicio pendiente
       const inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) {
         try {
@@ -458,7 +543,10 @@
         } catch(e) {}
       }
       aplicarModoOscuro();
-
+      // Mostrar login al cargar
+      mostrarLogin();
+      setAdminBtnByRol(null);
+      // Eliminar historial local y remoto
       window.eliminarHistorial = function() {
         if (confirm('¿Seguro que deseas eliminar tu historial local y remoto?')) {
           localStorage.removeItem('historial_registros');
@@ -467,44 +555,6 @@
           alert('Historial eliminado.');
         }
       };
-    });
-
-    let usuarioActual = null;
-    let rolActual = null;
-
-    function mostrarLogin() {
-      document.getElementById('loginModal').style.display = 'flex';
-    }
-    function ocultarLogin() {
-      document.getElementById('loginModal').style.display = 'none';
-    }
-
-    document.getElementById('loginBtn').onclick = function() {
-      const usuario = document.getElementById('loginUsuario').value.trim();
-      const clave = document.getElementById('loginClave').value.trim();
-      db.ref('usuarios/' + usuario).once('value', snap => {
-        const data = snap.val();
-        if (data && data.clave === clave) {
-          usuarioActual = usuario;
-          rolActual = data.rol;
-          ocultarLogin();
-          document.getElementById('nombre').value = usuario; // autocompleta el nombre
-          if (rolActual === 'superadmin') {
-            document.getElementById('adminBtn').style.display = 'flex';
-          } else {
-            document.getElementById('adminBtn').style.display = 'none';
-          }
-        } else {
-          document.getElementById('loginError').textContent = 'Usuario o clave incorrectos';
-          document.getElementById('loginError').style.display = 'block';
-        }
-      });
-    };
-
-    // Mostrar login al cargar
-    window.addEventListener('DOMContentLoaded', () => {
-      mostrarLogin();
-      document.getElementById('adminBtn').style.display = 'none';
     });
   </script>
 
@@ -547,14 +597,27 @@
     </div>
   </div>
 
-  <!-- Modal de Login -->
-  <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:#0008;">
-    <div style="background:#fff;padding:32px 24px;border-radius:16px;max-width:350px;width:95vw;box-shadow:0 2px 16px #0004;">
-      <h2 style="margin-top:0">Iniciar sesión</h2>
-      <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;margin-bottom:10px;">
-      <input type="password" id="loginClave" placeholder="Clave" style="width:100%;margin-bottom:18px;">
-      <button id="loginBtn" class="btn" style="width:100%;">Entrar</button>
-      <div id="loginError" style="color:#e74c3c;margin-top:10px;display:none;"></div>
+  <!-- Modal de Login Mejorado -->
+  <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:rgba(30,40,60,0.85);backdrop-filter:blur(2px);">
+    <div style="background:linear-gradient(120deg,#fff 80%,#e3e8ee 100%);padding:38px 28px 28px 28px;border-radius:22px;max-width:350px;width:min(350px,95vw);box-shadow:0 8px 32px #357abd33;display:flex;flex-direction:column;align-items:center;position:relative;">
+      <div style="background:linear-gradient(135deg,#4A90E2 60%,#43b97b 100%);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 2px 12px #4a90e240;">
+        <span style="font-size:2.2rem;color:#fff;">🔒</span>
+      </div>
+      <h2 style="margin:0 0 18px 0;font-size:1.5rem;color:#357abd;font-weight:700;letter-spacing:0.5px;">Iniciar sesión</h2>
+      <div style="width:100%;margin-bottom:12px;display:flex;justify-content:center;">
+        <div style="position:relative;width:100%;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#43b97b;pointer-events:none;">👤</span>
+          <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #43b97b;border-radius:8px;margin-bottom:10px;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="width:100%;margin-bottom:18px;display:flex;justify-content:center;">
+        <div style="position:relative;width:100%;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#357abd;pointer-events:none;">🔑</span>
+          <input type="password" id="loginClave" placeholder="Clave" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #357abd;border-radius:8px;margin-bottom:0;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
+        </div>
+      </div>
+      <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
+      <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
     </div>
   </div>
 </body>
