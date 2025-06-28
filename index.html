@@ -468,6 +468,44 @@
         }
       };
     });
+
+    let usuarioActual = null;
+    let rolActual = null;
+
+    function mostrarLogin() {
+      document.getElementById('loginModal').style.display = 'flex';
+    }
+    function ocultarLogin() {
+      document.getElementById('loginModal').style.display = 'none';
+    }
+
+    document.getElementById('loginBtn').onclick = function() {
+      const usuario = document.getElementById('loginUsuario').value.trim();
+      const clave = document.getElementById('loginClave').value.trim();
+      db.ref('usuarios/' + usuario).once('value', snap => {
+        const data = snap.val();
+        if (data && data.clave === clave) {
+          usuarioActual = usuario;
+          rolActual = data.rol;
+          ocultarLogin();
+          document.getElementById('nombre').value = usuario; // autocompleta el nombre
+          if (rolActual === 'superadmin') {
+            document.getElementById('adminBtn').style.display = 'flex';
+          } else {
+            document.getElementById('adminBtn').style.display = 'none';
+          }
+        } else {
+          document.getElementById('loginError').textContent = 'Usuario o clave incorrectos';
+          document.getElementById('loginError').style.display = 'block';
+        }
+      });
+    };
+
+    // Mostrar login al cargar
+    window.addEventListener('DOMContentLoaded', () => {
+      mostrarLogin();
+      document.getElementById('adminBtn').style.display = 'none';
+    });
   </script>
 
   <div class="container">
@@ -506,6 +544,17 @@
       <h2 style="margin-top:0">Panel de Administración</h2>
       <div id="adminResumen"></div>
       <div id="adminRegistros" style="margin-top:18px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Login -->
+  <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:#0008;">
+    <div style="background:#fff;padding:32px 24px;border-radius:16px;max-width:350px;width:95vw;box-shadow:0 2px 16px #0004;">
+      <h2 style="margin-top:0">Iniciar sesión</h2>
+      <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;margin-bottom:10px;">
+      <input type="password" id="loginClave" placeholder="Clave" style="width:100%;margin-bottom:18px;">
+      <button id="loginBtn" class="btn" style="width:100%;">Entrar</button>
+      <div id="loginError" style="color:#e74c3c;margin-top:10px;display:none;"></div>
     </div>
   </div>
 </body>
