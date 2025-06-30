@@ -228,6 +228,7 @@
     function setAdminBtnByRol(rol) {
       document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
     }
+    // Al hacer login, marcar usuario como conectado
     document.getElementById('loginBtn').onclick = function() {
       const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
       const clave = document.getElementById('loginClave').value.trim();
@@ -239,7 +240,13 @@
           ocultarLogin();
           document.getElementById('nombre').value = usuario;
           setAdminBtnByRol(rolActual);
-          cargarHistorialUsuario(); // <-- Aquí se carga el historial del usuario
+          // Marcar como conectado
+          db.ref('usuarios/' + usuario + '/conectado').set(true);
+          // Al cerrar o recargar, marcar como desconectado
+          window.addEventListener('beforeunload', () => {
+            db.ref('usuarios/' + usuario + '/conectado').set(false);
+          });
+          cargarHistorialUsuario();
         } else {
           document.getElementById('loginError').textContent = 'Usuario o clave incorrectos';
           document.getElementById('loginError').style.display = 'block';
@@ -512,12 +519,15 @@
         alert('Usuario agregado');
       });
     };
+    // Modifica mostrarListaUsuarios para mostrar el estado de conexión
     function mostrarListaUsuarios() {
       db.ref('usuarios').once('value', snap => {
         const data = snap.val() || {};
         let html = '<ul style="list-style:none;padding:0;">';
         Object.entries(data).forEach(([u, info]) => {
-          html += `<li style="margin-bottom:4px;">
+          const conectado = info.conectado ? '#43b97b' : '#bbb';
+          html += `<li style="margin-bottom:4px;display:flex;align-items:center;">
+            <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${conectado};margin-right:7px;border:1.5px solid #ccc;"></span>
             <b>${u}</b> (${info.rol})
             <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:8px;">Eliminar</button>
           </li>`;
