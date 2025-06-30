@@ -557,11 +557,20 @@
       setAdminBtnByRol(null);
       // Eliminar historial local y remoto
       window.eliminarHistorial = function() {
-        if (confirm('¿Seguro que deseas eliminar tu historial local y remoto?')) {
+        if (confirm('¿Seguro que deseas eliminar tu historial?')) {
+          const usuario = usuarioActual || document.getElementById('nombre').value.trim().toLowerCase();
+          db.ref('registros').once('value', snapshot => {
+            const data = snapshot.val() || {};
+            // Elimina solo los registros del usuario actual
+            Object.entries(data).forEach(([key, registro]) => {
+              if (registro.nombre && registro.nombre.toLowerCase() === usuario) {
+                db.ref('registros/' + key).remove();
+              }
+            });
+            document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+            alert('Tu historial ha sido eliminado.');
+          });
           localStorage.removeItem('historial_registros');
-          db.ref('registros').remove();
-          document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
-          alert('Historial eliminado.');
         }
       };
     });
