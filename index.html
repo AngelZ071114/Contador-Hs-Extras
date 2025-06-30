@@ -519,9 +519,10 @@
         alert('Usuario agregado');
       });
     };
-    // Modifica mostrarListaUsuarios para mostrar el estado de conexión
+    // Modifica mostrarListaUsuarios para actualizar en tiempo real el estado de conexión
     function mostrarListaUsuarios() {
-      db.ref('usuarios').once('value', snap => {
+      // Usar 'on' para escuchar cambios en tiempo real
+      db.ref('usuarios').on('value', snap => {
         const data = snap.val() || {};
         let html = '<ul style="list-style:none;padding:0;">';
         Object.entries(data).forEach(([u, info]) => {
