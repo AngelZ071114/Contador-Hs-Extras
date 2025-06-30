@@ -239,6 +239,7 @@
           ocultarLogin();
           document.getElementById('nombre').value = usuario;
           setAdminBtnByRol(rolActual);
+          cargarHistorialUsuario(); // <-- Aquí se carga el historial del usuario
         } else {
           document.getElementById('loginError').textContent = 'Usuario o clave incorrectos';
           document.getElementById('loginError').style.display = 'block';
@@ -271,6 +272,7 @@
       const nombre = document.getElementById("nombre").value.trim();
       if (!nombre) return alert("Por favor, ingresa un nombre.");
       const motivo = document.getElementById("motivo").value.trim();
+      if (!motivo) return alert("Por favor, ingresa un motivo."); // <-- Alerta restaurada
       inicio = obtenerHoraLocalVE();
       document.getElementById("horaInicio").textContent = formatearHora(inicio);
       document.getElementById("horaFin").textContent = "-";
@@ -376,12 +378,19 @@
       const mins = totalMin % 60;
       document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
     }
-    db.ref('registros').on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const registrosFirebase = Object.values(data);
-      mostrarHistorialFirebase(registrosFirebase);
-      actualizarResumenHorasFirebase(registrosFirebase);
-    });
+
+    // Solo mostrar el historial del usuario logueado y conservarlo siempre en Firebase
+    function cargarHistorialUsuario() {
+      const usuario = usuarioActual || document.getElementById('nombre').value.trim().toLowerCase();
+      db.ref('registros').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registrosFirebase = Object.values(data);
+        // Filtrar solo los registros del usuario actual
+        const registrosUsuario = registrosFirebase.filter(r => r.nombre && r.nombre.toLowerCase() === usuario);
+        mostrarHistorialFirebase(registrosUsuario);
+        actualizarResumenHorasFirebase(registrosUsuario);
+      });
+    }
 
     // --- Panel admin y gestión de usuarios ---
     document.getElementById('adminBtn').onclick = function() {
