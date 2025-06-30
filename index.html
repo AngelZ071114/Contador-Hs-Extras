@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Contabilizador de Horas</title>
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       margin: 0; padding: 0;
@@ -106,24 +108,15 @@
     .btn-eliminar {
       background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
       color: #fff !important;
-      box-shadow: 0 2px 8px #e74c3c40;
+      box-shadow: 0 2px 8px #e74c3c40 !important;
+      border: none !important;
+      margin: 10px 5px !important;
     }
     .btn-eliminar:hover {
       background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
       color: #fff !important;
-      transform: translateY(-2px) scale(1.04);
-      box-shadow: 0 4px 16px #e74c3c60;
-    }
-    .btn-enviar {
-      background: linear-gradient(90deg, #43b97b 60%, #2ecc71 100%) !important;
-      color: #fff !important;
-      box-shadow: 0 2px 8px #43b97b40;
-    }
-    .btn-enviar:hover {
-      background: linear-gradient(90deg, #2ecc71 60%, #43b97b 100%) !important;
-      color: #fff !important;
-      transform: translateY(-2px) scale(1.04);
-      box-shadow: 0 4px 16px #43b97b60;
+      transform: translateY(-2px) scale(1.04) !important;
+      box-shadow: 0 4px 16px #e74c3c60 !important;
     }
     body.manual-dark .btn,
     body.manual-dark .btn-contingencia,
@@ -135,19 +128,14 @@
       opacity: 1 !important;
       color: inherit;
     }
-    body.manual-dark .btn,
-    body.manual-dark .btn-eliminar,
-    body.manual-dark .btn-enviar {
-      color: #fff !important;
-      border: none !important;
+    body.manual-dark .btn-eliminar {
+    background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
+    color: #fff !important;
+    border: none !important;
     }
-    body.manual-dark .btn-darkmode {
-      background: linear-gradient(135deg, #23272e 60%, #181c20 100%) !important;
-      color: #f7b731 !important;
-    }
-    body.manual-dark .btn-darkmode:hover {
-      background: linear-gradient(135deg, #181c20 60%, #23272e 100%) !important;
-      color: #fff !important;
+    body.manual-dark .btn-eliminar:hover {
+    background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
+    color: #fff !important;
     }
     .info p { font-size: 16px; color: #555; margin: 10px 0; }
     .info span { font-weight: bold; color: #222; }
@@ -194,9 +182,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script type="module">
-    import emailjs from 'https://cdn.skypack.dev/@emailjs/browser';
-    emailjs.init("zVacNjGjZLO-ALRSe");
-
     // --- Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyDhgZV2UsMn04-z4AgP_cYB5IYfm-P9zZU",
@@ -603,7 +588,6 @@
       <button onclick="marcarInicio()" class="btn">Marcar Inicio</button>
       <button onclick="marcarFin()" class="btn">Marcar Fin</button>
       <button onclick="eliminarHistorial()" class="btn btn-eliminar">Eliminar Historial</button>
-      <button onclick="enviarHorasExtras()" class="btn btn-enviar">Enviar</button>
       <div class="info">
         <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
         <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
