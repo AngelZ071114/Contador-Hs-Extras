@@ -226,7 +226,12 @@
       document.getElementById('loginModal').style.display = 'none';
     }
     function setAdminBtnByRol(rol) {
-      document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
+      const adminBtn = document.getElementById('adminBtn');
+      if (rol === 'superadmin') {
+        adminBtn.style.display = 'flex';
+      } else {
+        adminBtn.style.display = 'none';
+      }
     }
     document.getElementById('loginBtn').onclick = function() {
       const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
@@ -379,15 +384,18 @@
     db.ref('registros').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       const registrosFirebase = Object.values(data);
-      mostrarHistorialFirebase(registrosFirebase);
-      actualizarResumenHorasFirebase(registrosFirebase);
+      // Filtrar por usuario logueado
+      const usuario = usuarioActual || document.getElementById('nombre').value.trim().toLowerCase();
+      const registrosUsuario = registrosFirebase.filter(r => r.nombre && r.nombre.toLowerCase() === usuario);
+      mostrarHistorialFirebase(registrosUsuario);
+      actualizarResumenHorasFirebase(registrosUsuario);
     });
 
     // --- Panel admin y gestión de usuarios ---
     document.getElementById('adminBtn').onclick = function() {
-      const clave = prompt('Clave de administrador:');
-      if(clave !== '123') return alert('Clave incorrecta');
-      mostrarPanelAdmin();
+      if (rolActual === 'superadmin') {
+        mostrarPanelAdmin();
+      }
     };
     document.getElementById('closeAdminModal').onclick = function() {
       document.getElementById('adminModal').style.display = 'none';
@@ -566,7 +574,7 @@
         <input type="text" id="motivo" name="motivo" placeholder="Motivo">
         <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
           <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
-          <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:19px;" min="0" step="any">
+          <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:40px;" min="0" step="any">
           <button onclick="agregarMotivoTrabajo()" class="btn" style="width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
         </div>
         <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
@@ -606,7 +614,7 @@
       <h2 style="margin:0 0 18px 0;font-size:1.5rem;color:#357abd;font-weight:700;letter-spacing:0.5px;">Iniciar sesión</h2>
       <div style="width:100%;margin-bottom:12px;display:flex;justify-content:center;">
         <div style="position:relative;width:100%;">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#43b97b;pointer-events:none;">👤</span>
+          <span style="position:absolute;left:12px;top:35%;transform:translateY(-50%);font-size:1.1rem;color:#43b97b;pointer-events:none;">👤</span>
           <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #43b97b;border-radius:8px;margin-bottom:10px;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
         </div>
       </div>
