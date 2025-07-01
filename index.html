@@ -13,8 +13,12 @@
       transition: background 0.5s, color 0.5s;
     }
     .container {
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      height: 100vh; text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      margin-top: 15vh; /* <-- mueve la card 15% hacia abajo */
+      text-align: center;
       padding: 0 10px;
     }
     .card {
@@ -908,6 +912,24 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       XLSX.writeFile(wb, "registros_completos.xlsx");
     });
   };
+  document.getElementById('logoutBtn').onclick = function() {
+  Swal.fire({
+    title: '¿Cerrar sesión?',
+    text: '¿Seguro que deseas cerrar sesión?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cerrar sesión',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      if (usuarioActual) {
+        db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
+        localStorage.removeItem('usuarioActual');
+      }
+      location.reload();
+    }
+  });
+};
   </script>
 
   <div class="container">
@@ -990,10 +1012,6 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       <div style="width:100%;margin-bottom:18px;display:flex;justify-content:center;">
         <div style="position:relative;width:100%;">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#357abd;pointer-events:none;">🔑</span>
-          <input type="password" id="loginClave" placeholder="Clave" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #357abd;border-radius:8px;margin-bottom:0;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
-        </div>
-      </div>
-      <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
       <button id="btnCambiarClave" class="btn btn-cambiar-clave">Cambiar mi clave</button>
       <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
     </div>
@@ -1047,7 +1065,6 @@ document.getElementById('logoutBtn').onclick = function() {
     cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      // Marcar como desconectado si hay usuario
       if (usuarioActual) {
         db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
         localStorage.removeItem('usuarioActual');
