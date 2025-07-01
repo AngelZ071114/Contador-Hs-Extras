@@ -582,10 +582,13 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         }
         if (r.monto && !isNaN(r.monto)) monto += parseFloat(r.monto);
       });
-      monto += totalMin * 0.025;
+      // El monto total en USDT es la suma de los montos explícitos más el valor del tiempo trabajado
+      const montoTiempo = totalMin * 0.025;
+      const montoTotal = monto + montoTiempo;
       const horas = Math.floor(totalMin / 60);
       const mins = totalMin % 60;
-      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(2)} USDT)`;
+      document.getElementById("resumenHoras").textContent =
+        `Horas trabajadas: ${horas}h ${mins}m (Total: ${montoTotal.toFixed(2)} USDT)`;
     }
     function cargarHistorialUsuario() {
       const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
