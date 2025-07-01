@@ -69,6 +69,16 @@
       transform: translateY(-2px) scale(1.04);
       box-shadow: 0 4px 16px #f7b73160;
     }
+    body.manual-dark .btn-contingencia {
+      background: linear-gradient(90deg, #f7b731 60%, #f97f51 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 2px 8px #ff767533;
+    }
+    body.manual-dark .btn-contingencia:hover {
+      background: linear-gradient(90deg, #f97f51 60%, #f7b731 100%) !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #ff767555;
+    }
     .btn-admin {
       background: linear-gradient(135deg, #4A90E2 60%, #43b97b 100%);
       color: #fff;
@@ -953,9 +963,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       </div>
       <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
     </div>
-    <button onclick="marcarInicio()" class="btn">Marcar Inicio</button>
-    <button onclick="marcarFin()" class="btn">Marcar Fin</button>
-    <button onclick="eliminarHistorial()" class="btn btn-eliminar">Eliminar Historial</button>
+    <button onclick="marcarInicio()" class="btn btn-inicio">Marcar Inicio</button>
+    <button onclick="marcarFin()" class="btn btn-fin">Marcar Fin</button>
     <div class="info">
       <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
       <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
@@ -1067,6 +1076,60 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   color: #fff !important;
   transform: translateY(-2px) scale(1.04);
   box-shadow: 0 4px 16px #6c348355;
+}
+
+/* Botón verde para "Marcar Inicio" */
+.btn-inicio {
+  background: linear-gradient(90deg, #43b97b 60%, #2ecc40 100%) !important;
+  color: #fff !important;
+  font-weight: bold;
+  box-shadow: 0 2px 8px #43b97b33;
+  border: none;
+}
+.btn-inicio:hover {
+  background: linear-gradient(90deg, #2ecc40 60%, #43b97b 100%) !important;
+  color: #fff !important;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 16px #43b97b55;
+}
+
+/* Botón rojo para "Marcar Fin" */
+.btn-fin {
+  background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
+  color: #fff !important;
+  font-weight: bold;
+  box-shadow: 0 2px 8px #e74c3c33;
+  border: none;
+}
+.btn-fin:hover {
+  background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
+  color: #fff !important;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 4px 16px #e74c3c55;
+}
+
+/* Modo oscuro: Botón verde para "Marcar Inicio" */
+body.manual-dark .btn-inicio {
+  background: linear-gradient(90deg, #43e97b 60%, #2ecc40 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 2px 8px #43e97b33;
+}
+body.manual-dark .btn-inicio:hover {
+  background: linear-gradient(90deg, #2ecc40 60%, #43e97b 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #43e97b55;
+}
+
+/* Modo oscuro: Botón rojo para "Marcar Fin" */
+body.manual-dark .btn-fin {
+  background: linear-gradient(90deg, #ff7675 60%, #d63031 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 2px 8px #ff767533;
+}
+body.manual-dark .btn-fin:hover {
+  background: linear-gradient(90deg, #d63031 60%, #ff7675 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #ff767555;
 }
   </style>
 </body>
