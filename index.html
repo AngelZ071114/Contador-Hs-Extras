@@ -499,7 +499,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       const hoy = obtenerHoraLocalVE();
       const dia = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
       const registro = { nombre, motivo, dia, inicio: formatearHora(inicio), fin: formatearHora(fin), duracion: duracionTexto };
-      if (monto > 0) registro.monto = monto.toFixed(2);
+      if (monto > 0) registro.monto = monto.toFixed(3);
       db.ref('registros').push(registro);
       inicio = null;
       localStorage.removeItem('inicio_pendiente');
@@ -588,7 +588,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       const horas = Math.floor(totalMin / 60);
       const mins = totalMin % 60;
       document.getElementById("resumenHoras").textContent =
-        `Horas trabajadas: ${horas}h ${mins}m (Total: ${montoTotal.toFixed(2)} USDT)`;
+        `Horas trabajadas: ${horas}h ${mins}m (Total: ${montoTotal.toFixed(3)} USDT)`;
     }
     function cargarHistorialUsuario() {
       const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
@@ -623,6 +623,43 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         document.getElementById('usuariosSidebarLista').innerHTML = html;
       });
     }
+
+    window.eliminarUsuario = function(usuario) {
+    Swal.fire({
+    title: `¿Eliminar usuario "${usuario}"?`,
+    text: 'Esto eliminará el usuario, pero NO sus registros históricos.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+    }).then((result) => {
+    if (result.isConfirmed) {
+      db.ref('usuarios/' + usuario).remove(err => {
+        if (err) return Swal.fire('Error', 'No se pudo eliminar el usuario.', 'error');
+        Swal.fire('Eliminado', 'Usuario eliminado correctamente.', 'success');
+        poblarSidebarUsuarios();
+        });
+      }
+    });
+  };
+
+  window.resetClaveUsuario = function(usuario) {
+  Swal.fire({
+    title: `Resetear clave de "${usuario}"`,
+    text: '¿Seguro que deseas resetear la clave de este usuario? Se establecerá como "123".',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, resetear',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      db.ref('usuarios/' + usuario + '/clave').set('123', err => {
+        if (err) return Swal.fire('Error', 'No se pudo resetear la clave.', 'error');
+        Swal.fire('Listo', 'La clave fue reseteada a "123".', 'success');
+      });
+    }
+  });
+};
 
     function mostrarPanelAdmin() {
       db.ref('registros').once('value', (snapshot) => {
@@ -676,7 +713,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
-              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(2)}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(3)}</td>
             </tr>
           `;
         });
@@ -685,7 +722,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       </table>
     </div>
     `;
-        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(2);
+        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(3);
         resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;margin-bottom:18px;'>`
           + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>`
           + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
@@ -741,7 +778,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         <td style='border:1px solid #ccc;padding:8px;'>${r.inicio || '-'}</td>
         <td style='border:1px solid #ccc;padding:8px;'>${r.fin || '-'}</td>
         <td style='border:1px solid #ccc;padding:8px;'>${r.duracion || '-'}</td>
-        <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal > 0 ? montoTotal.toFixed(2) : '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal > 0 ? montoTotal.toFixed(3) : '-'}</td>
         <td style='border:1px solid #ccc;padding:8px;text-align:center;'>
           <button onclick="window.eliminarRegistroEspecifico('${r._key}','${nombre.replace(/'/g, "\\'")}')" class="btn btn-eliminar" title="Eliminar registro" style="padding:4px 10px;font-size:17px;"><span style="pointer-events:none;">🗑️</span></button>
         </td>
@@ -904,7 +941,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
           let montoExcel = '';
           if (r.monto && !isNaN(r.monto)) {
             totalMontos += parseFloat(r.monto);
-            montoExcel = parseFloat(r.monto).toFixed(2);
+            montoExcel = parseFloat(r.monto).toFixed(3);
           }
           return {
             Nombre: r.nombre || '',
@@ -916,7 +953,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
             Duración: r.duracion || ''
           };
         });
-        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
+        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(3);
         rows.push({
           Nombre: '',
           Motivo: '',
@@ -975,7 +1012,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
               fin: formatearHora(finVE),
               duracion: calcularDuracionTexto(inicio, finVE)
             };
-            if (monto > 0) registro.monto = monto.toFixed(2);
+            if (monto > 0) registro.monto = monto.toFixed(3);
             db.ref('registros').push(registro);
             localStorage.removeItem('inicio_pendiente');
           }
