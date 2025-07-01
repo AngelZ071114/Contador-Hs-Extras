@@ -718,20 +718,18 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 
     window.agregarUsuario = function() {
       const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
-      const clave = document.getElementById('nuevaClave').value.trim();
       const rol = document.getElementById('nuevoRol').value;
-      if (!usuario || !clave) {
-        Swal.fire('Campos requeridos', 'Usuario y clave requeridos', 'warning');
+      if (!usuario) {
+        Swal.fire('Campos requeridos', 'Usuario requerido', 'warning');
         return;
       }
-      db.ref('usuarios/' + usuario).set({ usuario, clave, rol }, err => {
+      db.ref('usuarios/' + usuario).set({ usuario, clave: '123', rol }, err => {
         if (err) {
           Swal.fire('Error', 'Error al agregar usuario', 'error');
           return;
         }
         document.getElementById('nuevoUsuario').value = '';
-        document.getElementById('nuevaClave').value = '';
-        Swal.fire('¡Listo!', 'Usuario agregado', 'success');
+        Swal.fire('¡Listo!', 'Usuario agregado (clave: 123)', 'success');
       });
     };
 
@@ -952,15 +950,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
         <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
         <h2 style="margin-top:0">Panel de Administración</h2>
-        <!-- Gestión de usuarios en una fila -->
+        <!-- Gestión de usuarios en una fila, sin input de clave -->
         <div id="gestionUsuarios" style="margin-bottom:24px; display:flex; align-items:flex-end; gap:10px;">
           <div style="display:flex; flex-direction:column;">
             <label for="nuevoUsuario" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Usuario</label>
             <input id="nuevoUsuario" placeholder="Usuario" style="width:140px;">
-          </div>
-          <div style="display:flex; flex-direction:column;">
-            <label for="nuevaClave" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Clave</label>
-            <input id="nuevaClave" placeholder="Clave" type="password" style="width:120px;">
           </div>
           <div style="display:flex; flex-direction:column;">
             <label for="nuevoRol" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Rol</label>
@@ -969,7 +963,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
               <option value="superadmin">Superadmin</option>
             </select>
           </div>
-          <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="height:40px;margin-top:18px;">Agregar usuario</button>
+          <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="width:170px;white-space:nowrap;">Agregar usuario</button>
         </div>
         <div id="adminResumen"></div>
         <div id="adminRegistros" style="margin-top:18px;"></div>
