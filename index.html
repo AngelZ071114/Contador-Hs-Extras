@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Contabilizador de Horas</title>
+  <!-- Añade la meta viewport para responsividad -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- SweetAlert2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
@@ -15,6 +17,7 @@
     .container {
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       height: 100vh; text-align: center;
+      padding: 0 10px;
     }
     .card {
       background: white; padding: 30px 40px; border-radius: 16px;
@@ -118,6 +121,38 @@
       transform: translateY(-2px) scale(1.04) !important;
       box-shadow: 0 4px 16px #e74c3c60 !important;
     }
+    /* Botón especial para cambiar clave - amarillo auyama sólido */
+    .btn-cambiar-clave {
+      background: #e1a700 !important; /* amarillo auyama */
+      color: #23272e !important;
+      font-weight: bold;
+      border: none;
+      box-shadow: 0 2px 8px #e1a70033;
+      margin-top: 8px;
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 12px 0 12px 0;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .btn-cambiar-clave:hover {
+      background: #b8860b !important; /* un poco más oscuro al pasar el mouse */
+      color: #fffbe6 !important;
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 4px 16px #e1a70055;
+    }
+
+    /* Modo oscuro para el botón cambiar clave */
+    body.manual-dark .btn-cambiar-clave {
+      background: #e6a503 !important; /* amarillo auyama oscuro */
+      color: #fffbe6 !important;
+      box-shadow: 0 2px 8px #b8860b55;
+    }
+    body.manual-dark .btn-cambiar-clave:hover {
+      background: #e1a700 !important;
+      color: #23272e !important;
+      box-shadow: 0 4px 16px #ffc00177;
+    }
     body.manual-dark .btn,
     body.manual-dark .btn-contingencia,
     body.manual-dark .btn-admin,
@@ -176,6 +211,157 @@
       0% { transform: scale(0.7) translateY(40px); opacity: 0; }
       100% { transform: scale(1) translateY(0); opacity: 1; }
     }
+
+    /* --- Panel administrativo modo oscuro: gama mejorada y detalles visuales --- */
+body.manual-dark #adminModal,
+body.manual-dark #adminModal.manual-dark {
+  background: rgba(18, 22, 34, 0.98) !important;
+  backdrop-filter: blur(3px);
+}
+body.manual-dark #adminModal > div,
+body.manual-dark #adminPanel {
+  background: linear-gradient(120deg, #23283a 70%, #1e2233 100%) !important;
+  color: #e3eafc !important;
+  border-radius: 18px !important;
+  box-shadow: 0 8px 32px #000b !important;
+  border: 1.5px solid #27304a !important;
+  padding: 32px 24px 24px 24px !important;
+  max-width: 700px;
+  width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+body.manual-dark #adminModal h2, 
+body.manual-dark #adminModal h3 {
+  color: #7fd7ff !important;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+}
+body.manual-dark #adminModal input, 
+body.manual-dark #adminModal select {
+  background: #232c3d !important;
+  color: #e3eafc !important;
+  border: 1.5px solid #3b4a6b !important;
+  border-radius: 7px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 6px;
+}
+body.manual-dark #adminModal input::placeholder {
+  color: #8fa2c7 !important;
+  opacity: 0.8;
+}
+body.manual-dark #adminModal table {
+  background: #23283a !important;
+  color: #e3eafc !important;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px #1e233340;
+  margin-bottom: 18px;
+}
+body.manual-dark #adminModal th {
+  background: #27304a !important;
+  color: #7fd7ff !important;
+  border: 1px solid #3b4a6b !important;
+  font-weight: 600;
+  padding: 10px 8px;
+}
+body.manual-dark #adminModal td {
+  background: #23283a !important;
+  color: #e3eafc !important;
+  border: 1px solid #27304a !important;
+  padding: 9px 8px;
+}
+body.manual-dark #adminModal tr:nth-child(even) td {
+  background: #232c3d !important;
+}
+body.manual-dark #adminModal tr:hover td {
+  background: #2e3650 !important;
+  color: #fff !important;
+  transition: background 0.2s, color 0.2s;
+}
+body.manual-dark #adminModal .btn,
+body.manual-dark #adminModal .btn-enviar {
+  background: linear-gradient(90deg, #3b4a6b 60%, #1e2a3a 100%) !important;
+  color: #7fd7ff !important;
+  border: none !important;
+  box-shadow: 0 2px 8px #7fd7ff22 !important;
+  font-weight: bold;
+  border-radius: 7px !important;
+}
+body.manual-dark #adminModal .btn:hover,
+body.manual-dark #adminModal .btn-enviar:hover {
+  background: linear-gradient(90deg, #1e2a3a 60%, #3b4a6b 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #7fd7ff44 !important;
+}
+body.manual-dark #adminModal .btn-eliminar {
+  background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px #e74c3c40 !important;
+}
+body.manual-dark #adminModal .btn-eliminar:hover {
+  background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #e74c3c60 !important;
+}
+body.manual-dark #adminModal .btn-contingencia {
+  background: linear-gradient(90deg, #ffe082 60%, #ffb74d 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 2px 8px #ffe08240 !important;
+}
+body.manual-dark #adminModal .btn-contingencia:hover {
+  background: linear-gradient(90deg, #ffb74d 60%, #ffe082 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 4px 16px #ffe08260 !important;
+}
+body.manual-dark #adminModal ul {
+  background: none !important;
+  padding: 0;
+}
+body.manual-dark #adminModal li {
+  background: #232c3d !important;
+  color: #e3eafc !important;
+  border-radius: 7px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 4px #0002;
+}
+body.manual-dark #adminModal li b {
+  color: #7fd7ff !important;
+}
+body.manual-dark #adminModal select {
+  background: #232c3d !important;
+  color: #7fd7ff !important;
+  border: 1.5px solid #3b4a6b !important;
+}
+body.manual-dark #adminModal #usuariosLista button {
+  margin-left: 6px;
+}
+body.manual-dark #adminModal #closeAdminModal {
+  color: #7fd7ff !important;
+  background: none !important;
+  border-radius: 50% !important;
+  transition: background 0.2s, color 0.2s;
+}
+body.manual-dark #adminModal #closeAdminModal:hover {
+  color: #fff !important;
+  background: #2e3650 !important;
+}
+body.manual-dark #adminModal div[style*="background:#f7fafd"] {
+  background: #27304a !important;
+  color: #7fd7ff !important;
+  box-shadow: 0 2px 10px #7fd7ff22 !important;
+}
+body.manual-dark #adminModal span[style*="color:#357abd"] {
+  color: #7fd7ff !important;
+}
+body.manual-dark #adminModal span[style*="color:#43b97b"] {
+  color: #43e97b !important;
+}
+/* --- Fin panel administrativo modo oscuro --- */
   </style>
 </head>
 <body>
@@ -194,6 +380,9 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
+    // Haz db global para que esté disponible en los handlers de ventana
+    window.db = db;
 
     // --- Utilidades ---
     let inicio = null, usuarioActual = null, rolActual = null;
@@ -262,9 +451,15 @@
     // --- Inicio y Fin ---
     window.marcarInicio = function() {
       const nombre = document.getElementById("nombre").value.trim();
-      if (!nombre) return alert("Por favor, ingresa un nombre.");
+      if (!nombre) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
+        return;
+      }
       const motivo = document.getElementById("motivo").value.trim();
-      if (!motivo) return alert("Por favor, ingresa un motivo."); // <-- Alerta restaurada
+      if (!motivo) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa un motivo.', 'warning');
+        return;
+      }
       inicio = obtenerHoraLocalVE();
       document.getElementById("horaInicio").textContent = formatearHora(inicio);
       document.getElementById("horaFin").textContent = "-";
@@ -272,9 +467,15 @@
       localStorage.setItem('inicio_pendiente', JSON.stringify({ nombre, motivo, inicio: inicio.toISOString() }));
     };
     window.marcarFin = function() {
-      if (!inicio) return alert("Primero marca la hora de inicio.");
+      if (!inicio) {
+        Swal.fire('Atención', 'Primero marca la hora de inicio.', 'warning');
+        return;
+      }
       const nombre = document.getElementById("nombre").value.trim();
-      if (!nombre) return alert("Por favor, ingresa un nombre.");
+      if (!nombre) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
+        return;
+      }
       let motivo = document.getElementById("motivo").value.trim();
       let monto = 0;
       let inicioPend = localStorage.getItem('inicio_pendiente');
@@ -305,33 +506,43 @@
       localStorage.removeItem('inicio_pendiente');
     };
 
-    // --- Motivo Trabajo ---
     window.agregarMotivoTrabajo = function() {
       const motivoTrabajo = document.getElementById("motivoTrabajo").value.trim();
       const montoPagar = document.getElementById("montoPagar").value.trim();
       const nombre = document.getElementById("nombre").value.trim();
-      if (!motivoTrabajo) return alert("Por favor, ingresa el motivo del trabajo.");
-      if (!montoPagar || isNaN(montoPagar)) return alert("Por favor, ingresa solo números en el monto a pagar.");
-      if (!nombre) return alert("Por favor, ingresa tu nombre.");
+      if (!motivoTrabajo) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa el motivo del trabajo.', 'warning');
+        return;
+      }
+      if (!montoPagar || isNaN(montoPagar)) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa solo números en el monto a pagar.', 'warning');
+        return;
+      }
+      if (!nombre) {
+        Swal.fire('Campo requerido', 'Por favor, ingresa tu nombre.', 'warning');
+        return;
+      }
       const hoy = new Date();
       const fecha = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
       const registro = { nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha };
       db.ref('registros').push(registro);
       document.getElementById("motivoTrabajo").value = "";
       document.getElementById("montoPagar").value = "";
-      alert("Motivo de trabajo registrado correctamente.");
+      Swal.fire('¡Listo!', 'Motivo de trabajo registrado correctamente.', 'success');
     };
 
-    // --- Contingencia ---
     document.getElementById("contingenciaBtn").onclick = function() {
-      if (!inicio) return alert('Debes iniciar las horas extras.');
+      if (!inicio) {
+        Swal.fire('Atención', 'Debes iniciar las horas extras.', 'warning');
+        return;
+      }
       let inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) {
         let data = JSON.parse(inicioPend);
         data.contingencia = true;
         localStorage.setItem('inicio_pendiente', JSON.stringify(data));
       }
-      alert('La contingencia se sumará al siguiente registro cuando marques fin.');
+      Swal.fire('Contingencia', 'La contingencia se sumará al siguiente registro cuando marques fin.', 'info');
     };
 
     // --- Historial y resumen en tiempo real desde Firebase ---
@@ -368,7 +579,8 @@
       monto += totalMin * 0.025;
       const horas = Math.floor(totalMin / 60);
       const mins = totalMin % 60;
-      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(3)} USDT)`;
+      // Cambia a dos decimales:
+      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(2)} USDT)`;
     }
 
     // Solo mostrar el historial del usuario logueado y conservarlo siempre en Firebase
@@ -450,7 +662,7 @@
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
-              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(3)}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(2)}</td>
             </tr>
           `;
         });
@@ -459,7 +671,7 @@
             </table>
           </div>
         `;
-        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(3);
+        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(2);
         resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;margin-bottom:18px;'>`
           + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>`
           + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
@@ -486,22 +698,38 @@
       });
     }
     window.eliminarTodosRegistrosGlobales = function() {
-      if(confirm('¿Seguro que deseas eliminar TODOS los registros?')) {
-        db.ref('registros').remove();
-        document.getElementById('adminModal').style.display = 'none';
-      }
+      Swal.fire({
+        title: '¿Seguro?',
+        text: '¿Seguro que deseas eliminar TODOS los registros?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          db.ref('registros').remove();
+          document.getElementById('adminModal').style.display = 'none';
+          Swal.fire('Eliminado', 'Todos los registros han sido eliminados.', 'success');
+        }
+      });
     }
     window.agregarUsuario = function() {
       const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
       const clave = document.getElementById('nuevaClave').value.trim();
       const rol = document.getElementById('nuevoRol').value;
-      if (!usuario || !clave) return alert('Usuario y clave requeridos');
+      if (!usuario || !clave) {
+        Swal.fire('Campos requeridos', 'Usuario y clave requeridos', 'warning');
+        return;
+      }
       db.ref('usuarios/' + usuario).set({ usuario, clave, rol }, err => {
-        if (err) return alert('Error al agregar usuario');
+        if (err) {
+          Swal.fire('Error', 'Error al agregar usuario', 'error');
+          return;
+        }
         document.getElementById('nuevoUsuario').value = '';
         document.getElementById('nuevaClave').value = '';
         mostrarListaUsuarios();
-        alert('Usuario agregado');
+        Swal.fire('¡Listo!', 'Usuario agregado', 'success');
       });
     };
     // Modifica mostrarListaUsuarios para actualizar en tiempo real el estado de conexión
@@ -516,6 +744,7 @@
             <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${conectado};margin-right:7px;border:1.5px solid #ccc;"></span>
             <b>${u}</b> (${info.rol})
             <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:8px;">Eliminar</button>
+            <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
           </li>`;
         });
         html += '</ul>';
@@ -523,12 +752,46 @@
       });
     }
     window.eliminarUsuario = function(usuario) {
-      if (!confirm('¿Eliminar usuario ' + usuario + '?')) return;
-      db.ref('usuarios/' + usuario).remove(err => {
-        if (err) return alert('Error al eliminar');
-        mostrarListaUsuarios();
+      Swal.fire({
+        title: '¿Eliminar usuario?',
+        text: '¿Eliminar usuario ' + usuario + '?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          db.ref('usuarios/' + usuario).remove(err => {
+            if (err) {
+              Swal.fire('Error', 'Error al eliminar', 'error');
+              return;
+            }
+            mostrarListaUsuarios();
+            Swal.fire('Eliminado', 'Usuario eliminado', 'success');
+          });
+        }
       });
     };
+    window.resetClaveUsuario = function(usuario) {
+  Swal.fire({
+    title: 'Resetear clave',
+    text: `¿Seguro que deseas resetear la clave del usuario "${usuario}" a "123"?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, resetear',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      db.ref('usuarios/' + usuario + '/clave').set('123', err => {
+        if (err) {
+          Swal.fire('Error', 'No se pudo resetear la clave.', 'error');
+        } else {
+          Swal.fire('¡Listo!', 'Clave reseteada a "123".', 'success');
+        }
+      });
+    }
+  });
+};
 
     // --- Inicialización y restauración de estado ---
     window.addEventListener('DOMContentLoaded', () => {
@@ -564,12 +827,59 @@
               }
             });
             document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
-            alert('Tu historial ha sido eliminado.');
+            Swal.fire('Eliminado', 'Tu historial ha sido eliminado.', 'success');
           });
           localStorage.removeItem('historial_registros');
         }
       };
     });
+    document.getElementById('btnCambiarClave').onclick = async function() {
+  const { value: formValues } = await Swal.fire({
+    title: 'Cambiar clave',
+    html:
+      '<input id="swal-usuario" class="swal2-input" placeholder="Usuario">' +
+      '<input id="swal-clave-actual" type="password" class="swal2-input" placeholder="Clave actual">' +
+      '<input id="swal-nueva-clave" type="password" class="swal2-input" placeholder="Nueva clave">',
+    focusConfirm: false,
+    preConfirm: () => {
+      return [
+        document.getElementById('swal-usuario').value.trim().toLowerCase(),
+        document.getElementById('swal-clave-actual').value.trim(),
+        document.getElementById('swal-nueva-clave').value.trim()
+      ];
+    },
+    confirmButtonText: 'Guardar',
+    showCancelButton: true,
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!formValues) return; // Cancelado
+
+  const [usuario, claveActual, nuevaClave] = formValues;
+  if (!usuario || !claveActual || !nuevaClave) {
+    Swal.fire('Campos requeridos', 'Completa todos los campos.', 'warning');
+    return;
+  }
+
+  db.ref('usuarios/' + usuario).once('value', snap => {
+    const data = snap.val();
+    if (!data) {
+      Swal.fire('Error', 'Usuario no encontrado.', 'error');
+      return;
+    }
+    if (data.clave !== claveActual) {
+      Swal.fire('Error', 'La clave actual es incorrecta.', 'error');
+      return;
+    }
+    db.ref('usuarios/' + usuario + '/clave').set(nuevaClave, err => {
+      if (err) {
+        Swal.fire('Error', 'No se pudo cambiar la clave.', 'error');
+        return;
+      }
+      Swal.fire('¡Listo!', 'Clave cambiada correctamente.', 'success');
+    });
+  });
+};
   </script>
 
   <div class="container">
@@ -607,6 +917,10 @@
       <h2 style="margin-top:0">Panel de Administración</h2>
       <div id="adminResumen"></div>
       <div id="adminRegistros" style="margin-top:18px;"></div>
+      <!-- Reemplaza el botón dentro del panel admin por este bloque centrado -->
+      <div style="display: flex; justify-content: center; margin-top: 18px;">
+        <button id="descargarExcelAdminBtn" class="btn" style="width: 60%; min-width: 220px;">Descargar todos los registros (Excel)</button>
+      </div>
     </div>
   </div>
 
@@ -630,8 +944,75 @@
         </div>
       </div>
       <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
+      <button id="btnCambiarClave" class="btn btn-cambiar-clave">Cambiar mi clave</button>
       <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
     </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script type="module">
+    // Descargar todos los registros y el monto total en USDT desde el panel admin
+    document.getElementById('descargarExcelAdminBtn').onclick = function() {
+      db.ref('registros').once('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registros = Object.values(data);
+        if (registros.length === 0) {
+          Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
+          return;
+        }
+        // Prepara los datos para Excel
+        let totalMin = 0, totalMontos = 0;
+        const rows = registros.map(r => {
+          let min = 0;
+          if (r.duracion) {
+            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+            if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+          totalMin += min;
+          let montoExcel = '';
+          if (r.monto && !isNaN(r.monto)) {
+            totalMontos += parseFloat(r.monto);
+            montoExcel = parseFloat(r.monto).toFixed(2);
+          }
+          return {
+            Nombre: r.nombre || '',
+            Motivo: r.motivo || '',
+            'Monto (USDT)': montoExcel,
+            Día: r.dia || '',
+            Inicio: r.inicio || '',
+            Fin: r.fin || '',
+            Duración: r.duracion || ''
+          };
+        });
+        // Agrega una fila de total al final
+        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
+        rows.push({
+          Nombre: '',
+            Fin: r.fin || '',
+            Duración: r.duracion || ''
+          });
+        });
+        // Agrega una fila de total al final
+        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
+        rows.push({
+          Nombre: '',
+          Motivo: '',
+          'Monto (USDT)': '',
+          Día: '',
+          Inicio: '',
+          Fin: 'TOTAL USDT',
+          Duración: totalUSDTExcel
+        });
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Registros");
+        XLSX.writeFile(wb, "registros_completos.xlsx");
+      };
+  </script>
+  <style>
+    .swal2-container {
+      z-index: 10001 !important;
+    }
+  </style>
 </body>
 </html>
