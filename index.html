@@ -912,7 +912,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       XLSX.writeFile(wb, "registros_completos.xlsx");
     });
   };
-  document.getElementById('logoutBtn').onclick = function() {
+
+    document.getElementById('logoutBtn').onclick = function() {
   Swal.fire({
     title: '¿Cerrar sesión?',
     text: '¿Seguro que deseas cerrar sesión?',
@@ -922,10 +923,6 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      if (usuarioActual) {
-        db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
-        localStorage.removeItem('usuarioActual');
-      }
       location.reload();
     }
   });
@@ -958,7 +955,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       <div id="resumenHoras"></div>
     </div>
   </div>
+  <!-- Botón de alternar modo oscuro/claro y cerrar sesión, juntos en la esquina superior derecha -->
+<div style="position:fixed;top:1.5%;right:24px;z-index:201;display:flex;gap:10px;">
   <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
+  <button id="logoutBtn" class="btn" style="background:linear-gradient(90deg,#888 60%,#555 100%);padding:12px 22px;font-size:16px;border-radius:8px;min-width:120px;position:relative;right:35%;" title="Cerrar sesión">Cerrar sesión</button>
+</div>
   <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
   <!-- Panel administrativo optimizado -->
   <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
@@ -1012,6 +1013,10 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       <div style="width:100%;margin-bottom:18px;display:flex;justify-content:center;">
         <div style="position:relative;width:100%;">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#357abd;pointer-events:none;">🔑</span>
+          <input type="password" id="loginClave" placeholder="Clave" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #357abd;border-radius:8px;margin-bottom:0;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
+        </div>
+      </div>
+      <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
       <button id="btnCambiarClave" class="btn btn-cambiar-clave">Cambiar mi clave</button>
       <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
     </div>
@@ -1053,26 +1058,5 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   box-shadow: 0 4px 16px #6c348355;
 }
   </style>
-  <button id="logoutBtn" class="btn" style="position:fixed;top:18px;right:80px;z-index:201;font-size:18px;padding:10px 18px;border-radius:24px;">Cerrar sesión</button>
-  <script>
-document.getElementById('logoutBtn').onclick = function() {
-  Swal.fire({
-    title: '¿Cerrar sesión?',
-    text: '¿Seguro que deseas cerrar sesión?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, cerrar sesión',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      if (usuarioActual) {
-        db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
-        localStorage.removeItem('usuarioActual');
-      }
-      location.reload();
-    }
-  });
-};
-  </script>
 </body>
 </html>
