@@ -437,7 +437,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       const data = snap.val();
       if (data && data.clave === clave) {
         usuarioActual = usuario;
-        rolActual = data.rol;
+        localStorage.setItem('usuarioActual', usuario); // Guardar usuario logueado
         ocultarLogin();
         document.getElementById('nombre').value = usuario;
         setAdminBtnByRol(rolActual);
@@ -659,30 +659,42 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         return nombreA.localeCompare(nombreB);
       });
       let resumenHtml = `
-        <div style='overflow-x:auto; margin-bottom:18px;'>
-          <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
-          <table style='border-collapse:collapse;width:100%;min-width:400px;'>
-            <thead>
-              <tr style='background:#f7fafd;'>
-                <th style='border:1px solid #ccc;padding:8px;'>Nombre</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Horas</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Minutos</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Registros</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Monto Total (USDT)</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
+  <div style='overflow-x:auto; margin-bottom:18px;'>
+    <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
+    <table style='border-collapse:collapse;width:100%;min-width:400px;'>
+      <thead>
+        <tr style='background:#f7fafd;'>
+          <th style='border:1px solid #ccc;padding:8px;'>Nombre</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Fecha</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Horas</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Minutos</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Registros</th>
+          <th style='border:1px solid #ccc;padding:8px;'>Monto Total (USDT)</th>
+        </tr>
+      </thead>
+      <tbody>
+`;
       resumenOrdenado.forEach(([key, data]) => {
         const [nombre, motivo] = key.split('|');
         const h = Math.floor(data.min/60), m = data.min%60;
         const montoTiempo = data.min * 0.025;
         const montoTotal = montoTiempo + data.monto;
+        // Obtener la(s) fecha(s) de los registros de este grupo
+        const fechas = registros
+          .filter(r => (r.nombre + '|' + (r.motivo || '-')) === key)
+          .map(r => r.dia)
+          .filter(Boolean)
+          .filter((v, i, arr) => arr.indexOf(v) === i) // Únicas
+          .sort();
+        const fechaStr = fechas.length === 1
+          ? (fechas[0] ? fechas[0].split('-').reverse().join('/') : '')
+          : fechas.map(f => f.split('-').reverse().join('/')).join(', ');
         resumenHtml += `
           <tr>
             <td style='border:1px solid #ccc;padding:8px;'>${nombre}</td>
             <td style='border:1px solid #ccc;padding:8px;'>${motivo}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${fechaStr}</td>
             <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
             <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
             <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
@@ -775,6 +787,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 
   // --- Inicialización y restauración de estado ---
   window.addEventListener('DOMContentLoaded', () => {
+  usuarioActual = localStorage.getItem('usuarioActual') || null;
+  if (!usuarioActual) {
+    mostrarLogin();
+    setAdminBtnByRol(null);
+  }
     const inicioPend = localStorage.getItem('inicio_pendiente');
     if (inicioPend) {
       try {
