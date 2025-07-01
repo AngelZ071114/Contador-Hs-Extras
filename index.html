@@ -437,10 +437,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       const data = snap.val();
       if (data && data.clave === clave) {
         usuarioActual = usuario;
+        rolActual = data.rol; // <-- ASIGNA EL ROL AQUÍ
         localStorage.setItem('usuarioActual', usuario); // Guardar usuario logueado
         ocultarLogin();
         document.getElementById('nombre').value = usuario;
-        setAdminBtnByRol(rolActual);
+        setAdminBtnByRol(rolActual); // Ahora sí funcionará correctamente
         marcarConectado(usuario, true);
         window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
         cargarHistorialUsuario();
@@ -1034,5 +1035,27 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   box-shadow: 0 4px 16px #6c348355;
 }
   </style>
+  <button id="logoutBtn" class="btn" style="position:fixed;top:18px;right:80px;z-index:201;font-size:18px;padding:10px 18px;border-radius:24px;">Cerrar sesión</button>
+  <script>
+document.getElementById('logoutBtn').onclick = function() {
+  Swal.fire({
+    title: '¿Cerrar sesión?',
+    text: '¿Seguro que deseas cerrar sesión?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cerrar sesión',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Marcar como desconectado si hay usuario
+      if (usuarioActual) {
+        db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
+        localStorage.removeItem('usuarioActual');
+      }
+      location.reload();
+    }
+  });
+};
+  </script>
 </body>
 </html>
