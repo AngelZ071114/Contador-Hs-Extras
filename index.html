@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <title>Contabilizador de Horas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Librerías externas -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Tus estilos aquí (no modificados, ya están optimizados y bien estructurados) -->
   <style>
     body {
       margin: 0; padding: 0;
@@ -395,10 +397,241 @@ body.manual-dark #adminModal span[style*="color:#357abd"] {
 body.manual-dark #adminModal span[style*="color:#43b97b"] {
   color: #43e97b !important;
 }
-/* --- Fin panel administrativo modo oscuro --- */
+body.manual-dark #calculoTiempoPanel {
+  background: linear-gradient(120deg, #23283a 70%, #1e2233 100%) !important;
+  color: #e3eafc !important;
+  border-radius: 18px !important;
+  box-shadow: 0 8px 32px #000b !important;
+  border: 1.5px solid #27304a !important;
+  padding: 32px 24px 24px 24px !important;
+  max-width: 700px;
+  width: 95vw;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+}
+body.manual-dark #calculoTiempoPanel input,
+body.manual-dark #calculoTiempoPanel select {
+  background: #232c3d !important;
+  color: #e3eafc !important;
+  border: 1.5px solid #3b4a6b !important;
+  border-radius: 7px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 6px;
+}
+body.manual-dark #calculoTiempoPanel input::placeholder {
+  color: #8fa2c7 !important;
+  opacity: 0.8;
+}
+body.manual-dark #calculoTiempoPanel button {
+  background: linear-gradient(90deg, #3b4a6b 60%, #1e2a3a 100%) !important;
+  color: #7fd7ff !important;
+  border: none !important;
+  box-shadow: 0 2px 8px #7fd7ff22 !important;
+  font-weight: bold;
+  border-radius: 7px !important;
+}
+body.manual-dark #calculoTiempoPanel button:hover {
+  background: linear-gradient(90deg, #1e2a3a 60%, #3b4a6b 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #7fd7ff44 !important;
+}
+
+/* Botón verde para Marcar Inicio */
+.btn-inicio {
+  background: linear-gradient(90deg, #43b97b 60%, #2ecc71 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px #43b97b40 !important;
+  border: none !important;
+  margin: 10px 5px !important;
+}
+.btn-inicio:hover {
+  background: linear-gradient(90deg, #2ecc71 60%, #43b97b 100%) !important;
+  color: #fff !important;
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 4px 16px #43b97b60 !important;
+}
+
+/* Botón rojo para Marcar Fin */
+.btn-fin {
+  background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px #e74c3c40 !important;
+  border: none !important;
+  margin: 10px 5px !important;
+}
+.btn-fin:hover {
+  background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
+  color: #fff !important;
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 4px 16px #e74c3c60 !important;
+}
+
+/* Modo oscuro: mismos colores, pero sin perder contraste */
+body.manual-dark .btn-inicio {
+  background: linear-gradient(90deg, #43e97b 60%, #2ecc71 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px #43e97b33 !important;
+}
+body.manual-dark .btn-inicio:hover {
+  background: linear-gradient(90deg, #2ecc71 60%, #43e97b 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 4px 16px #43e97b55 !important;
+}
+body.manual-dark .btn-fin {
+  background: linear-gradient(90deg, #ff7675 60%, #e74c3c 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px #ff767533 !important;
+}
+body.manual-dark .btn-fin:hover {
+  background: linear-gradient(90deg, #e74c3c 60%, #ff7675 100%) !important;
+  color: #23272e !important;
+  box-shadow: 0 4px 16px #ff767555 !important;
+}
   </style>
 </head>
 <body>
+  <!-- Panel de login, panel admin, modal calcular tiempo, botones, etc. -->
+  <div class="container">
+    <div class="card">
+      <h1>Contador de Horas</h1>
+      <div id="saludoUsuario" style="display:none; font-size:1.1rem; font-weight:bold; margin-bottom:10px;"></div>
+      <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+      <input type="text" id="motivo" name="motivo" placeholder="Motivo">
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
+        <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:40px;" min="0" step="any">
+        <button onclick="agregarMotivoTrabajo()" class="btn" style="width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
+      </div>
+      <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
+    </div>
+    <button onclick="marcarInicio()" class="btn btn-inicio">Marcar Inicio</button>
+    <button onclick="marcarFin()" class="btn btn-fin">Marcar Fin</button>
+    <div class="info">
+      <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
+      <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
+      <p><strong>Duración:</strong> <span id="duracion">-</span></p>
+    </div>
+    <div class="historial" id="historial">
+      <strong>Histórico de tiempos:</strong>
+      <div id="resumenHoras"></div>
+    </div>
+  </div>
+  <!-- Botón de alternar modo oscuro/claro y cerrar sesión, juntos en la esquina superior derecha -->
+<div style="position:fixed;top:1.5%;right:24px;z-index:201;display:flex;gap:10px;">
+  <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
+  <button id="logoutBtn" class="btn" style="background:linear-gradient(90deg,#888 60%,#555 100%);padding:12px 22px;font-size:16px;border-radius:8px;min-width:120px;position:relative;right:35%;" title="Cerrar sesión">Cerrar sesión</button>
+</div>
+  <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
+  <!-- Panel administrativo optimizado -->
+  <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
+    <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:1100px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
+      <!-- Panel lateral de usuarios (más ancho) -->
+      <div id="adminSidebar" style="width:370px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 18px 24px 24px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
+        <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Operadores</h3>
+        <div id="usuariosSidebarLista"></div>
+      </div>
+      <!-- Panel principal admin -->
+      <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
+        <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
+        <h2 style="margin-top:0">Panel de Administración</h2>
+        <!-- Gestión de usuarios en una fila, sin input de clave -->
+        <div id="gestionUsuarios" style="margin-bottom:24px; display:flex; align-items:flex-end; gap:10px;">
+          <div style="display:flex; flex-direction:column;">
+            <label for="nuevoUsuario" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Usuario</label>
+            <input id="nuevoUsuario" placeholder="Usuario" style="width:140px;">
+          </div>
+          <div style="display:flex; flex-direction:column;">
+            <label for="nuevoRol" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Rol</label>
+            <select id="nuevoRol" style="width:120px;">
+              <option value="usuario">Usuario</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+          </div>
+          <button onclick="window.agregarUsuario()" class="btn btn-agregar-usuario" style="width:170px;white-space:nowrap;">Agregar usuario</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:18px;">
+          <button id="btnMostrarCalculoTiempoAdmin" class="btn" style="background:linear-gradient(90deg,#6C3483 60%,#43b97b 100%);">Calcular tiempo</button>
+        </div>
+        <div id="adminResumen"></div>
+        <div id="adminRegistros" style="margin-top:18px;"></div>
+        <div style="display: flex; justify-content: center; margin-top: 18px;">
+          <button id="descargarExcelAdminBtn" class="btn btn-excel" style="width: 60%; min-width: 220px;">Descargar todos los registros (Excel)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Login Mejorado -->
+  <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:rgba(30,40,60,0.85);backdrop-filter:blur(2px);">
+    <div style="background:linear-gradient(120deg,#fff 80%,#e3e8ee 100%);padding:38px 28px 28px 28px;border-radius:22px;max-width:350px;width:min(350px,95vw);box-shadow:0 8px 32px #357abd33;display:flex;flex-direction:column;align-items:center;position:relative;">
+      <div style="background:linear-gradient(135deg,#4A90E2 60%,#43b97b 100%);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 2px 12px #4a90e240;">
+        <span style="font-size:2.2rem;color:#fff;">🔒</span>
+      </div>
+      <h2 style="margin:0 0 18px 0;font-size:1.5rem;color:#357abd;font-weight:700;letter-spacing:0.5px;">Iniciar sesión</h2>
+      <div style="width:100%;margin-bottom:12px;display:flex;justify-content:center;">
+        <div style="position:relative;width:100%;">
+          <span style="position:absolute;left:12px;top:35%;transform:translateY(-50%);font-size:1.1rem;color:#43b97b;pointer-events:none;">👤</span>
+          <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #43b97b;border-radius:8px;margin-bottom:10px;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="width:100%;margin-bottom:18px;display:flex;justify-content:center;">
+        <div style="position:relative;width:100%;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#357abd;pointer-events:none;">🔑</span>
+          <input type="password" id="loginClave" placeholder="Clave" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #357abd;border-radius:8px;margin-bottom:0;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
+        </div>
+      </div>
+      <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
+      <button id="btnCambiarClave" class="btn btn-cambiar-clave">Cambiar mi clave</button>
+      <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- Modal Calcular Tiempo Admin (ya optimizado y con estilo consistente) -->
+  <div id="calculoTiempoBoxAdmin" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,40,60,0.85); backdrop-filter:blur(2px); z-index:9999; align-items:center; justify-content:center;">
+    <!-- Reemplaza SOLO el div interno de #calculoTiempoBoxAdmin por este -->
+<div id="calculoTiempoPanel"
+  style="flex:1; padding:32px 24px 24px 24px; position:relative; background:#fff; color:#23272e; border-radius:16px; box-shadow:0 8px 32px #357abd33; max-width:500px; width:95vw; display:flex; flex-direction:column; gap:18px; align-items:flex-start;">
+  <button id="btnCerrarCalculoTiempoAdmin"
+    style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
+  <h2 style="margin-top:0;margin-bottom:18px;font-size:1.5rem;color:#357abd;font-weight:700;">Calcular tiempo (USDT)</h2>
+  <div style="width:100%;display:flex;flex-direction:column;gap:6px;">
+    <label for="calculoUsuarioAdmin"
+      style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Usuario</label>
+    <select id="calculoUsuarioAdmin"
+      style="width:100%;padding:10px;border:1.5px solid #357abd;border-radius:8px;background:#f7fafd;">
+      <option value="">Selecciona usuario</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:12px;width:100%;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+      <label for="calculoHorasAdmin"
+        style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Horas</label>
+      <input type="number" id="calculoHorasAdmin" placeholder="Horas" min="0"
+        style="width:100%;padding:10px;border:1.5px solid #43b97b;border-radius:8px;background:#f7fafd;">
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+      <label for="calculoMinutosAdmin"
+        style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Minutos</label>
+      <input type="number" id="calculoMinutosAdmin" placeholder="Minutos" min="0" max="59"
+        style="width:100%;padding:10px;border:1.5px solid #43b97b;border-radius:8px;background:#f7fafd;">
+    </div>
+  </div>
+  <div style="width:100%;display:flex;flex-direction:column;gap:6px;">
+    <label for="calculoMotivoAdmin"
+      style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Motivo</label>
+    <input type="text" id="calculoMotivoAdmin" placeholder="Motivo"
+      style="width:100%;padding:10px;border:1.5px solid #357abd;border-radius:8px;background:#f7fafd;">
+  </div>
+  <div id="calculoResultadoAdmin"
+    style="font-size:1.2rem; color:#43b97b; font-weight:bold; margin-top:8px; min-height:24px;"></div>
+  <button id="btnAgregarCalculoHistorialAdmin" class="btn"
+    style="width:100%;padding:12px;font-size:16px;border-radius:8px;background:linear-gradient(90deg,#4A90E2 60%,#357ABD 100%);color:#fff;cursor:pointer;transition:background 0.3s,transform 0.2s;">
+    Añadir al historial
+  </button>
+</div>
+  </div>
+
   <script type="module">
     // --- Configuración Firebase ---
     const firebaseConfig = {
@@ -414,58 +647,56 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     const db = firebase.database();
 
     // --- Utilidades ---
+    const $ = id => document.getElementById(id);
     const obtenerHoraLocalVE = (date = new Date()) =>
       new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
     const formatearHora = date =>
       date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const getInputValue = id => document.getElementById(id).value.trim();
 
     // --- Estado global ---
     let inicio = null, usuarioActual = null, rolActual = null;
 
     // --- Login y sesión ---
-    const mostrarLogin = () => document.getElementById('loginModal').style.display = 'flex';
-    const ocultarLogin = () => document.getElementById('loginModal').style.display = 'none';
-    const setAdminBtnByRol = rol =>
-      document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
-    const marcarConectado = (usuario, conectado) =>
-      db.ref('usuarios/' + usuario + '/conectado').set(conectado);
-
-    const mostrarError = (id, mensaje) => {
-      const el = document.getElementById(id);
-      el.textContent = mensaje;
-      el.style.display = 'block';
-    };
-
     function loginUsuario() {
-      const usuario = getInputValue('loginUsuario').toLowerCase();
-      const clave = getInputValue('loginClave');
+      const usuario = $('loginUsuario').value.trim().toLowerCase();
+      const clave = $('loginClave').value.trim();
       db.ref('usuarios/' + usuario).once('value', snap => {
         const data = snap.val();
         if (data && data.clave === clave) {
           usuarioActual = usuario;
           rolActual = data.rol;
           localStorage.setItem('usuarioActual', usuario);
-          ocultarLogin();
-          document.getElementById('nombre').value = usuario;
+          $('loginModal').style.display = 'none';
+          $('nombre').value = usuario;
           setAdminBtnByRol(rolActual);
           marcarConectado(usuario, true);
           window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
           cargarHistorialUsuario();
-          document.getElementById('saludoUsuario').style.display = 'block';
-          document.getElementById('saludoUsuario').textContent = `Hola, ${usuario}, ¿cómo te preparas para la chamba? 😎`;
-          document.getElementById('nombre').style.display = 'none';
+          $('saludoUsuario').style.display = 'block';
+          $('saludoUsuario').textContent = `Hola, ${usuario}, ¿cómo te preparas para la chamba? 😎`;
+          $('nombre').style.display = 'none';
         } else {
           mostrarError('loginError', 'Usuario o clave incorrectos');
         }
       });
+    }
+    function mostrarError(id, mensaje) {
+      const el = $(id);
+      el.textContent = mensaje;
+      el.style.display = 'block';
+    }
+    function setAdminBtnByRol(rol) {
+      $('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
+    }
+    function marcarConectado(usuario, conectado) {
+      db.ref('usuarios/' + usuario + '/conectado').set(conectado);
     }
 
     // --- Modo oscuro ---
     function aplicarModoOscuro() {
       const dark = localStorage.getItem('modo_oscuro') === '1';
       document.body.classList.toggle('manual-dark', dark);
-      const btn = document.getElementById('darkModeToggle');
+      const btn = $('darkModeToggle');
       btn.textContent = dark ? '☀️' : '🌙';
       btn.style.background = dark ? '#23272e' : '#fff';
       btn.style.color = dark ? '#e0e6ef' : '#23272e';
@@ -473,8 +704,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 
     // --- Inicio y Fin de jornada ---
     window.marcarInicio = () => {
-      const nombre = getInputValue("nombre");
-      const motivo = getInputValue("motivo");
+      const nombre = $('nombre').value.trim();
+      const motivo = $('motivo').value.trim();
       if (!nombre || !motivo) return Swal.fire('Campo requerido', 'Indica el motivo de la chamba.', 'warning');
       inicio = obtenerHoraLocalVE();
       setInfoInicio(inicio);
@@ -483,9 +714,9 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 
     window.marcarFin = () => {
       if (!inicio) return Swal.fire('Atención', 'Primero marca la hora de inicio.', 'warning');
-      const nombre = getInputValue("nombre");
+      const nombre = $('nombre').value.trim();
       if (!nombre) return Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
-      let motivo = getInputValue("motivo");
+      let motivo = $('motivo').value.trim();
       let monto = 0, contingencia = false;
       const inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) contingencia = !!JSON.parse(inicioPend).contingencia;
@@ -505,16 +736,16 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       localStorage.removeItem('inicio_pendiente');
     };
 
-    const setInfoInicio = inicio => {
-      document.getElementById("horaInicio").textContent = formatearHora(inicio);
-      document.getElementById("horaFin").textContent = "-";
-      document.getElementById("duracion").textContent = "-";
-    };
-    const setInfoFin = (fin, inicio) => {
-      document.getElementById("horaFin").textContent = formatearHora(fin);
-      document.getElementById("duracion").textContent = calcularDuracionTexto(inicio, fin);
-    };
-    const calcularDuracionTexto = (inicio, fin) => {
+    function setInfoInicio(inicio) {
+      $("horaInicio").textContent = formatearHora(inicio);
+      $("horaFin").textContent = "-";
+      $("duracion").textContent = "-";
+    }
+    function setInfoFin(fin, inicio) {
+      $("horaFin").textContent = formatearHora(fin);
+      $("duracion").textContent = calcularDuracionTexto(inicio, fin);
+    }
+    function calcularDuracionTexto(inicio, fin) {
       const duracionMs = fin - inicio;
       const segundos = Math.floor(duracionMs / 1000);
       const minutos = Math.floor(segundos / 60);
@@ -522,25 +753,25 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       const restoMin = minutos % 60;
       const restoSeg = segundos % 60;
       return `${horas}h ${restoMin}m ${restoSeg}s`;
-    };
+    }
 
     // --- Motivo trabajo directo ---
     window.agregarMotivoTrabajo = () => {
-      const motivoTrabajo = getInputValue("motivoTrabajo");
-      const montoPagar = getInputValue("montoPagar");
-      const nombre = getInputValue("nombre");
+      const motivoTrabajo = $("motivoTrabajo").value.trim();
+      const montoPagar = $("montoPagar").value.trim();
+      const nombre = $("nombre").value.trim();
       if (!motivoTrabajo || !montoPagar || isNaN(montoPagar) || !nombre)
         return Swal.fire('Campo requerido', 'Indica el motivo y monto a pagar.', 'warning');
       const hoy = new Date();
       const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
       db.ref('registros').push({ nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha });
-      document.getElementById("motivoTrabajo").value = "";
-      document.getElementById("montoPagar").value = "";
+      $("motivoTrabajo").value = "";
+      $("montoPagar").value = "";
       Swal.fire('¡Listo!', 'Motivo de trabajo registrado correctamente.', 'success');
     };
 
     // --- Contingencia ---
-    document.getElementById("contingenciaBtn").onclick = () => {
+    $("contingenciaBtn").onclick = () => {
       if (!inicio) return Swal.fire('Atención', 'Debes iniciar las horas extras.', 'warning');
       const inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) {
@@ -602,8 +833,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     }
 
     // --- Panel admin y gestión de usuarios ---
-    document.getElementById('adminBtn').onclick = () => rolActual === 'superadmin' && mostrarPanelAdmin();
-    document.getElementById('closeAdminModal').onclick = () => document.getElementById('adminModal').style.display = 'none';
+    $("adminBtn").onclick = () => rolActual === 'superadmin' && mostrarPanelAdmin();
+    $("closeAdminModal").onclick = () => $("adminModal").style.display = 'none';
 
     function poblarSidebarUsuarios() {
       db.ref('usuarios').on('value', snap => {
@@ -623,7 +854,34 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         document.getElementById('usuariosSidebarLista').innerHTML = html;
       });
     }
-
+    
+    window.agregarUsuario = function() {
+  const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
+  const rol = document.getElementById('nuevoRol').value;
+  if (!usuario) {
+    Swal.fire('Campo requerido', 'Debes ingresar un nombre de usuario.', 'warning');
+    return;
+  }
+  db.ref('usuarios/' + usuario).once('value', snap => {
+    if (snap.exists()) {
+      Swal.fire('Usuario existente', 'Ese usuario ya existe.', 'warning');
+    } else {
+      db.ref('usuarios/' + usuario).set({
+        clave: '123',
+        rol: rol,
+        conectado: false
+      }, err => {
+        if (err) Swal.fire('Error', 'No se pudo agregar el usuario.', 'error');
+        else {
+          Swal.fire('¡Listo!', 'Usuario agregado correctamente. Clave por defecto: 123', 'success');
+          document.getElementById('nuevoUsuario').value = '';
+          document.getElementById('nuevoRol').value = 'usuario';
+          poblarSidebarUsuarios();
+        }
+      });
+    }
+  });
+};
     window.eliminarUsuario = function(usuario) {
     Swal.fire({
     title: `¿Eliminar usuario "${usuario}"?`,
@@ -668,26 +926,19 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 
         // Agrupar por nombre de usuario
         const resumenPorUsuario = {};
-        let totalMin = 0, totalMontos = 0;
+        let totalRegistros = 0, totalMontos = 0;
         registros.forEach(r => {
           const nombre = r.nombre || '-';
-          if (!resumenPorUsuario[nombre]) resumenPorUsuario[nombre] = { min: 0, count: 0, monto: 0 };
-          if (r.duracion) {
-            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-            if (match) {
-              const min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-              resumenPorUsuario[nombre].min += min;
-              totalMin += min;
-            }
-          }
+          if (!resumenPorUsuario[nombre]) resumenPorUsuario[nombre] = { count: 0, monto: 0 };
           if (r.monto && !isNaN(r.monto)) {
             resumenPorUsuario[nombre].monto += parseFloat(r.monto);
             totalMontos += parseFloat(r.monto);
           }
           resumenPorUsuario[nombre].count++;
+          totalRegistros++;
         });
 
-        // Tabla resumen
+        // Tabla resumen SOLO suma el monto guardado, no recalcula por tiempo
         let resumenHtml = `
 <div style='overflow-x:auto; margin-bottom:18px;'>
   <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
@@ -695,8 +946,6 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     <thead>
       <tr style='background:#f7fafd;'>
         <th style='border:1px solid #ccc;padding:8px;'>Nombre</th>
-        <th style='border:1px solid #ccc;padding:8px;'>Horas</th>
-        <th style='border:1px solid #ccc;padding:8px;'>Minutos</th>
         <th style='border:1px solid #ccc;padding:8px;'>Registros</th>
         <th style='border:1px solid #ccc;padding:8px;'>Monto Total (USDT)</th>
       </tr>
@@ -704,16 +953,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     <tbody>
 `;
         Object.entries(resumenPorUsuario).forEach(([nombre, data]) => {
-          const h = Math.floor(data.min / 60), m = data.min % 60;
-          const montoTiempo = data.min * 0.025;
-          const montoTotal = montoTiempo + data.monto;
           resumenHtml += `
             <tr>
               <td style='border:1px solid #ccc;padding:8px;cursor:pointer;color:#357abd;font-weight:600;text-decoration:underline;' onclick="window.mostrarDetalleUsuario('${nombre.replace(/'/g, "\\'")}')">${nombre}</td>
-              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
-              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
               <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
-              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(3)}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.monto.toFixed(3)}</td>
             </tr>
           `;
         });
@@ -722,11 +966,10 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       </table>
     </div>
     `;
-        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(3);
+        let totalUSDT = totalMontos.toFixed(3);
         resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;margin-bottom:18px;'>`
-          + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>`
-          + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
-          + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
+          + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>Monto total</span>`
+          + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${totalUSDT} USDT</span>`
           + `</div>`;
         let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
         document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
@@ -758,19 +1001,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         <tbody>
   `;
   registros.forEach(r => {
-    // Calcular monto por tiempo trabajado
-    let montoTiempo = 0;
-    if (r.duracion) {
-      const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-      if (match) {
-        const min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-        montoTiempo = min * 0.025;
-      }
-    }
-    let montoTotal = montoTiempo;
-    if (r.monto && !isNaN(r.monto)) {
-      montoTotal += parseFloat(r.monto);
-    }
+    // Solo mostrar el monto guardado, sin sumar por tiempo
+    let montoMostrar = (r.monto && !isNaN(r.monto)) ? parseFloat(r.monto).toFixed(3) : '-';
     html += `
       <tr>
         <td style='border:1px solid #ccc;padding:8px;'>${r.motivo || '-'}</td>
@@ -778,7 +1010,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         <td style='border:1px solid #ccc;padding:8px;'>${r.inicio || '-'}</td>
         <td style='border:1px solid #ccc;padding:8px;'>${r.fin || '-'}</td>
         <td style='border:1px solid #ccc;padding:8px;'>${r.duracion || '-'}</td>
-        <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal > 0 ? montoTotal.toFixed(3) : '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoMostrar}</td>
         <td style='border:1px solid #ccc;padding:8px;text-align:center;'>
           <button onclick="window.eliminarRegistroEspecifico('${r._key}','${nombre.replace(/'/g, "\\'")}')" class="btn btn-eliminar" title="Eliminar registro" style="padding:4px 10px;font-size:17px;"><span style="pointer-events:none;">🗑️</span></button>
         </td>
@@ -930,14 +1162,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         const data = snapshot.val() || {};
         const registros = Object.values(data);
         if (registros.length === 0) return Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
-        let totalMin = 0, totalMontos = 0;
+        let totalMontos = 0;
         const rows = registros.map(r => {
-          let min = 0;
-          if (r.duracion) {
-            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-            if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-          }
-          totalMin += min;
           let montoExcel = '';
           if (r.monto && !isNaN(r.monto)) {
             totalMontos += parseFloat(r.monto);
@@ -953,7 +1179,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
             Duración: r.duracion || ''
           };
         });
-        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(3);
+        const totalUSDTExcel = totalMontos.toFixed(3);
         rows.push({
           Nombre: '',
           Motivo: '',
@@ -1019,189 +1245,77 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         } catch (err) {}
       }
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+  // Mostrar el modal al hacer click en el botón
+  const btnMostrar = document.getElementById('btnMostrarCalculoTiempoAdmin');
+  if (btnMostrar) {
+    btnMostrar.onclick = function() {
+      document.getElementById('calculoTiempoBoxAdmin').style.display = 'flex';
+      cargarUsuariosEnSelectAdmin();
+    };
+  }
+  const horas = document.getElementById('calculoHorasAdmin');
+  const minutos = document.getElementById('calculoMinutosAdmin');
+  if (horas) horas.oninput = actualizarCalculoResultadoAdmin;
+  if (minutos) minutos.oninput = actualizarCalculoResultadoAdmin;
+  // Añadir al historial
+  const btnAgregar = document.getElementById('btnAgregarCalculoHistorialAdmin');
+  if (btnAgregar) {
+    btnAgregar.onclick = function() {
+      const usuario = document.getElementById('calculoUsuarioAdmin').value;
+      const motivo = document.getElementById('calculoMotivoAdmin').value.trim();
+      const horas = parseInt(document.getElementById('calculoHorasAdmin').value) || 0;
+      const minutos = parseInt(document.getElementById('calculoMinutosAdmin').value) || 0;
+      const totalMin = horas * 60 + minutos;
+      const usdt = totalMin * 0.025;
+      if (!usuario) return Swal.fire('Usuario requerido', 'Selecciona un usuario.', 'warning');
+      if (!motivo) return Swal.fire('Motivo requerido', 'Ingresa un motivo.', 'warning');
+      if (totalMin <= 0) return Swal.fire('Tiempo requerido', 'Ingresa horas o minutos válidos.', 'warning');
+      const hoy = new Date();
+      const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+      db.ref('registros').push({
+        nombre: usuario,
+        motivo: motivo,
+        monto: usdt.toFixed(3),
+        dia: fecha,
+        duracion: `${horas}h ${minutos}m 0s`
+      }, err => {
+        if (err) return Swal.fire('Error', 'No se pudo guardar el registro.', 'error');
+        Swal.fire('¡Listo!', 'Registro añadido al historial.', 'success');
+        document.getElementById('calculoTiempoBoxAdmin').style.display = 'none';
+        document.getElementById('calculoMotivoAdmin').value = '';
+        document.getElementById('calculoHorasAdmin').value = '';
+        document.getElementById('calculoMinutosAdmin').value = '';
+        document.getElementById('calculoUsuarioAdmin').value = '';
+        document.getElementById('calculoResultadoAdmin').textContent = '';
+      });
+    };
+  }
+});
+
+function cargarUsuariosEnSelectAdmin() {
+  const select = document.getElementById('calculoUsuarioAdmin');
+  select.innerHTML = '<option value="">Selecciona usuario</option>';
+  db.ref('usuarios').once('value', snap => {
+    const data = snap.val() || {};
+    Object.keys(data).forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = u;
+      select.appendChild(opt);
+    });
+  });
+}
+
+function actualizarCalculoResultadoAdmin() {
+  const horas = parseInt(document.getElementById('calculoHorasAdmin').value) || 0;
+  const minutos = parseInt(document.getElementById('calculoMinutosAdmin').value) || 0;
+  const totalMin = horas * 60 + minutos;
+  const usdt = totalMin * 0.025;
+  document.getElementById('calculoResultadoAdmin').textContent =
+    totalMin > 0 ? `Equivale a ${usdt.toFixed(3)} USDT` : '';
+}
   </script>
-
-  <div class="container">
-    <div class="card">
-      <h1>Contador de Horas</h1>
-      <div id="saludoUsuario" style="display:none; font-size:1.1rem; font-weight:bold; margin-bottom:10px;"></div>
-      <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
-      <input type="text" id="motivo" name="motivo" placeholder="Motivo">
-      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
-        <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
-        <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:40px;" min="0" step="any">
-        <button onclick="agregarMotivoTrabajo()" class="btn" style="width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
-      </div>
-      <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
-    </div>
-    <button onclick="marcarInicio()" class="btn btn-inicio">Marcar Inicio</button>
-    <button onclick="marcarFin()" class="btn btn-fin">Marcar Fin</button>
-    <div class="info">
-      <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
-      <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
-      <p><strong>Duración:</strong> <span id="duracion">-</span></p>
-    </div>
-    <div class="historial" id="historial">
-      <strong>Histórico de tiempos:</strong>
-      <div id="resumenHoras"></div>
-    </div>
-  </div>
-  <!-- Botón de alternar modo oscuro/claro y cerrar sesión, juntos en la esquina superior derecha -->
-<div style="position:fixed;top:1.5%;right:24px;z-index:201;display:flex;gap:10px;">
-  <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
-  <button id="logoutBtn" class="btn" style="background:linear-gradient(90deg,#888 60%,#555 100%);padding:12px 22px;font-size:16px;border-radius:8px;min-width:120px;position:relative;right:35%;" title="Cerrar sesión">Cerrar sesión</button>
-</div>
-  <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
-  <!-- Panel administrativo optimizado -->
-  <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
-    <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:1100px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
-      <!-- Panel lateral de usuarios (más ancho) -->
-      <div id="adminSidebar" style="width:370px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 18px 24px 24px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
-        <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Operadores</h3>
-        <div id="usuariosSidebarLista"></div>
-      </div>
-      <!-- Panel principal admin -->
-      <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
-        <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
-        <h2 style="margin-top:0">Panel de Administración</h2>
-        <!-- Gestión de usuarios en una fila, sin input de clave -->
-        <div id="gestionUsuarios" style="margin-bottom:24px; display:flex; align-items:flex-end; gap:10px;">
-          <div style="display:flex; flex-direction:column;">
-            <label for="nuevoUsuario" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Usuario</label>
-            <input id="nuevoUsuario" placeholder="Usuario" style="width:140px;">
-          </div>
-          <div style="display:flex; flex-direction:column;">
-            <label for="nuevoRol" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Rol</label>
-            <select id="nuevoRol" style="width:120px;">
-              <option value="usuario">Usuario</option>
-              <option value="superadmin">Superadmin</option>
-            </select>
-          </div>
-          <button onclick="window.agregarUsuario()" class="btn btn-agregar-usuario" style="width:170px;white-space:nowrap;">Agregar usuario</button>
-        </div>
-        <div id="adminResumen"></div>
-        <div id="adminRegistros" style="margin-top:18px;"></div>
-        <div style="display: flex; justify-content: center; margin-top: 18px;">
-          <button id="descargarExcelAdminBtn" class="btn btn-excel" style="width: 60%; min-width: 220px;">Descargar todos los registros (Excel)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Login Mejorado -->
-  <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:rgba(30,40,60,0.85);backdrop-filter:blur(2px);">
-    <div style="background:linear-gradient(120deg,#fff 80%,#e3e8ee 100%);padding:38px 28px 28px 28px;border-radius:22px;max-width:350px;width:min(350px,95vw);box-shadow:0 8px 32px #357abd33;display:flex;flex-direction:column;align-items:center;position:relative;">
-      <div style="background:linear-gradient(135deg,#4A90E2 60%,#43b97b 100%);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 2px 12px #4a90e240;">
-        <span style="font-size:2.2rem;color:#fff;">🔒</span>
-      </div>
-      <h2 style="margin:0 0 18px 0;font-size:1.5rem;color:#357abd;font-weight:700;letter-spacing:0.5px;">Iniciar sesión</h2>
-      <div style="width:100%;margin-bottom:12px;display:flex;justify-content:center;">
-        <div style="position:relative;width:100%;">
-          <span style="position:absolute;left:12px;top:35%;transform:translateY(-50%);font-size:1.1rem;color:#43b97b;pointer-events:none;">👤</span>
-          <input type="text" id="loginUsuario" placeholder="Usuario" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #43b97b;border-radius:8px;margin-bottom:10px;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
-        </div>
-      </div>
-      <div style="width:100%;margin-bottom:18px;display:flex;justify-content:center;">
-        <div style="position:relative;width:100%;">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:1.1rem;color:#357abd;pointer-events:none;">🔑</span>
-          <input type="password" id="loginClave" placeholder="Clave" style="width:100%;padding:12px 12px 12px 38px;font-size:16px;border:1.5px solid #357abd;border-radius:8px;margin-bottom:0;background:#f7fafd;transition:border 0.3s;box-sizing:border-box;">
-        </div>
-      </div>
-      <button id="loginBtn" class="btn" style="width:100%;font-size:1.1rem;padding:12px 0 12px 0;border-radius:8px;box-shadow:0 2px 8px #4a90e220;">Entrar</button>
-      <button id="btnCambiarClave" class="btn btn-cambiar-clave">Cambiar mi clave</button>
-      <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
-    </div>
-  </div>
-  <style>
-    .swal2-container {
-      z-index: 10001 !important;
-    }
-
-    /* Botón especial para agregar usuario */
-.btn-agregar-usuario {
-  background: #355C7D !important;
-  color: #fff !important;
-  font-weight: bold;
-  border: none;
-  box-shadow: 0 2px 8px #355c7d33;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.btn-agregar-usuario:hover {
-  background: #27405a !important;
-  color: #fff !important;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 4px 16px #355c7d55;
-}
-
-/* Botón especial para descargar Excel */
-.btn-excel {
-  background: #6C3483 !important;
-  color: #fff !important;
-  font-weight: bold;
-  border: none;
-  box-shadow: 0 2px 8px #6c348333;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-.btn-excel:hover {
-  background: #512e5f !important;
-  color: #fff !important;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 4px 16px #6c348355;
-}
-
-/* Botón verde para "Marcar Inicio" */
-.btn-inicio {
-  background: linear-gradient(90deg, #43b97b 60%, #2ecc40 100%) !important;
-  color: #fff !important;
-  font-weight: bold;
-  box-shadow: 0 2px 8px #43b97b33;
-  border: none;
-}
-.btn-inicio:hover {
-  background: linear-gradient(90deg, #2ecc40 60%, #43b97b 100%) !important;
-  color: #fff !important;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 4px 16px #43b97b55;
-}
-
-/* Botón rojo para "Marcar Fin" */
-.btn-fin {
-  background: linear-gradient(90deg, #e74c3c 60%, #c0392b 100%) !important;
-  color: #fff !important;
-  font-weight: bold;
-  box-shadow: 0 2px 8px #e74c3c33;
-  border: none;
-}
-.btn-fin:hover {
-  background: linear-gradient(90deg, #c0392b 60%, #e74c3c 100%) !important;
-  color: #fff !important;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 4px 16px #e74c3c55;
-}
-
-/* Modo oscuro: Botón verde para "Marcar Inicio" */
-body.manual-dark .btn-inicio {
-  background: linear-gradient(90deg, #43e97b 60%, #2ecc40 100%) !important;
-  color: #23272e !important;
-  box-shadow: 0 2px 8px #43e97b33;
-}
-body.manual-dark .btn-inicio:hover {
-  background: linear-gradient(90deg, #2ecc40 60%, #43e97b 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 16px #43e97b55;
-}
-
-/* Modo oscuro: Botón rojo para "Marcar Fin" */
-body.manual-dark .btn-fin {
-  background: linear-gradient(90deg, #ff7675 60%, #d63031 100%) !important;
-  color: #23272e !important;
-  box-shadow: 0 2px 8px #ff767533;
-}
-body.manual-dark .btn-fin:hover {
-  background: linear-gradient(90deg, #d63031 60%, #ff7675 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 16px #ff767555;
-}
-  </style>
 </body>
 </html>
