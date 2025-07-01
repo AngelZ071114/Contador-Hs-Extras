@@ -703,46 +703,59 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     function mostrarDetalleUsuario(nombre) {
       const registros = (window._registrosAdmin || []).filter(r => (r.nombre || '-') === nombre);
       let html = `
-        <button class="btn" onclick="window.mostrarPanelAdmin()" style="margin-bottom:18px;">⬅️ Volver al resumen</button>
-        <h3 style="margin-top:0;margin-bottom:14px;font-size:1.2rem;color:#357abd;">Registros de <span style="color:#43b97b">${nombre}</span></h3>
-        <div style='overflow-x:auto;'>
-          <table style='border-collapse:collapse;width:100%;min-width:400px;'>
-            <thead>
-              <tr style='background:#f7fafd;'>
-                <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Fecha</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Inicio</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Fin</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Duración</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Monto (USDT)</th>
-                <th style='border:1px solid #ccc;padding:8px;'>Eliminar</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-      registros.forEach(r => {
-        html += `
-          <tr>
-            <td style='border:1px solid #ccc;padding:8px;'>${r.motivo || '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${r.dia || '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${r.inicio || '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${r.fin || '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${r.duracion || '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${r.monto ? parseFloat(r.monto).toFixed(2) : '-'}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:center;'>
-              <button onclick="window.eliminarRegistroEspecifico('${r._key}','${nombre.replace(/'/g, "\\'")}')" class="btn btn-eliminar" title="Eliminar registro" style="padding:4px 10px;font-size:17px;"><span style="pointer-events:none;">🗑️</span></button>
-            </td>
+    <button class="btn" onclick="window.mostrarPanelAdmin()" style="margin-bottom:18px;">⬅️ Volver al resumen</button>
+    <h3 style="margin-top:0;margin-bottom:14px;font-size:1.2rem;color:#357abd;">Registros de <span style="color:#43b97b">${nombre}</span></h3>
+    <div style='overflow-x:auto;'>
+      <table style='border-collapse:collapse;width:100%;min-width:400px;'>
+        <thead>
+          <tr style='background:#f7fafd;'>
+            <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Fecha</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Inicio</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Fin</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Duración</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Monto (USDT)</th>
+            <th style='border:1px solid #ccc;padding:8px;'>Eliminar</th>
           </tr>
-        `;
-      });
-      html += `
-            </tbody>
-          </table>
-        </div>
-      `;
-      document.getElementById('adminResumen').innerHTML = html;
-      document.getElementById('adminRegistros').innerHTML = '';
+        </thead>
+        <tbody>
+  `;
+  registros.forEach(r => {
+    // Calcular monto por tiempo trabajado
+    let montoTiempo = 0;
+    if (r.duracion) {
+      const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+      if (match) {
+        const min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        montoTiempo = min * 0.025;
+      }
     }
+    let montoTotal = montoTiempo;
+    if (r.monto && !isNaN(r.monto)) {
+      montoTotal += parseFloat(r.monto);
+    }
+    html += `
+      <tr>
+        <td style='border:1px solid #ccc;padding:8px;'>${r.motivo || '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;'>${r.dia || '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;'>${r.inicio || '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;'>${r.fin || '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;'>${r.duracion || '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal > 0 ? montoTotal.toFixed(2) : '-'}</td>
+        <td style='border:1px solid #ccc;padding:8px;text-align:center;'>
+          <button onclick="window.eliminarRegistroEspecifico('${r._key}','${nombre.replace(/'/g, "\\'")}')" class="btn btn-eliminar" title="Eliminar registro" style="padding:4px 10px;font-size:17px;"><span style="pointer-events:none;">🗑️</span></button>
+        </td>
+      </tr>
+    `;
+  });
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('adminResumen').innerHTML = html;
+  document.getElementById('adminRegistros').innerHTML = '';
+}
 
     function eliminarRegistroEspecifico(key, nombre) {
       Swal.fire({
