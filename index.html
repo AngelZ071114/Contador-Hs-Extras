@@ -691,10 +691,10 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
             <div id="usuariosLista"></div>
           </div>
         `;
-        document.getElementById('adminResumen').innerHTML = eliminarBtn + gestionUsuariosHtml + resumenHtml;
+        document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
         document.getElementById('adminRegistros').innerHTML = '';
         document.getElementById('adminModal').style.display = 'flex';
-        mostrarListaUsuarios();
+        poblarSidebarUsuarios(); // <-- Añade esto aquí
       });
     }
     window.eliminarTodosRegistrosGlobales = function() {
@@ -740,15 +740,18 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         let html = '<ul style="list-style:none;padding:0;">';
         Object.entries(data).forEach(([u, info]) => {
           const conectado = info.conectado ? '#43b97b' : '#bbb';
-          html += `<li style="margin-bottom:4px;display:flex;align-items:center;">
-            <span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${conectado};margin-right:7px;border:1.5px solid #ccc;"></span>
-            <b>${u}</b> (${info.rol})
-            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:8px;">Eliminar</button>
+          html += `<li style="margin-bottom:8px;display:flex;align-items:center;">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${conectado};margin-right:7px;border:1px solid #ccc;"></span>
+            <span style="font-weight:600;">${u}</span>
+            <span style="font-size:12px;color:#888;margin-left:6px;">(${info.rol})</span>
+            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:auto;">Eliminar</button>
             <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
           </li>`;
         });
         html += '</ul>';
         document.getElementById('usuariosLista').innerHTML = html;
+        // Actualiza también en la barra lateral del panel admin
+        document.getElementById('usuariosSidebarLista').innerHTML = html;
       });
     }
     window.eliminarUsuario = function(usuario) {
@@ -912,14 +915,23 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
   <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
   <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
-  <div style="background:#fff;color:#23272e;padding:0;border-radius:16px;max-width:900px;width:95vw;max-height:90vh;overflow-y:auto;position:relative;display:flex;">
+  <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:900px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
     <!-- Panel lateral de usuarios -->
-    <div id="adminSidebar" style="width:220px;background:#f7fafd;border-radius:16px 0 0 16px;padding:24px 12px 24px 18px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
+    <div id="adminSidebar" style="width:270px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 12px 24px 18px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
       <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Usuarios</h3>
-      <ul id="sidebarUsuarios" style="list-style:none;padding:0;margin:0;"></ul>
+      <div id="usuariosSidebarLista"></div>
+      <div style="margin-top:18px;">
+        <input id="nuevoUsuario" placeholder="Usuario" style="margin-bottom:6px;width:90%;">
+        <input id="nuevaClave" placeholder="Clave" type="password" style="margin-bottom:6px;width:90%;">
+        <select id="nuevoRol" style="margin-bottom:6px;width:90%;">
+          <option value="usuario">Usuario</option>
+          <option value="superadmin">Superadmin</option>
+        </select>
+        <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="width:90%;">Agregar usuario</button>
+      </div>
     </div>
-    <!-- Contenido principal admin -->
-    <div style="flex:1;padding:32px 24px 24px 24px;">
+    <!-- Panel principal admin -->
+    <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
       <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
       <h2 style="margin-top:0">Panel de Administración</h2>
       <div id="adminResumen"></div>
@@ -1006,7 +1018,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Registros");
         XLSX.writeFile(wb, "registros_completos.xlsx");
-      });
+      }); // <-- este paréntesis y punto y coma cierran la función correctamente
     };
   </script>
   <style>
