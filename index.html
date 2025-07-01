@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Contabilizador de Horas</title>
-  <!-- Añade la meta viewport para responsividad -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- SweetAlert2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
@@ -367,6 +365,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
 <body>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module">
     // --- Firebase ---
     const firebaseConfig = {
@@ -380,11 +379,8 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    // Haz db global para que esté disponible en los handlers de ventana
     window.db = db;
 
-    // --- Utilidades ---
     let inicio = null, usuarioActual = null, rolActual = null;
 
     const obtenerHoraLocalVE = (date = new Date()) =>
@@ -579,17 +575,14 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       monto += totalMin * 0.025;
       const horas = Math.floor(totalMin / 60);
       const mins = totalMin % 60;
-      // Cambia a dos decimales:
       document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(2)} USDT)`;
     }
 
-    // Solo mostrar el historial del usuario logueado y conservarlo siempre en Firebase
     function cargarHistorialUsuario() {
       const usuario = usuarioActual || document.getElementById('nombre').value.trim().toLowerCase();
       db.ref('registros').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const registrosFirebase = Object.values(data);
-        // Filtrar solo los registros del usuario actual
         const registrosUsuario = registrosFirebase.filter(r => r.nombre && r.nombre.toLowerCase() === usuario);
         mostrarHistorialFirebase(registrosUsuario);
         actualizarResumenHorasFirebase(registrosUsuario);
@@ -605,6 +598,27 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     document.getElementById('closeAdminModal').onclick = function() {
       document.getElementById('adminModal').style.display = 'none';
     };
+
+    // Panel lateral de usuarios (sidebar)
+    function poblarSidebarUsuarios() {
+      db.ref('usuarios').on('value', snap => {
+        const data = snap.val() || {};
+        let html = '<ul style="list-style:none;padding:0;margin:0;">';
+        Object.entries(data).forEach(([u, info]) => {
+          const conectado = info.conectado ? '#43b97b' : '#bbb';
+          html += `<li style="margin-bottom:8px;display:flex;align-items:center;">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${conectado};margin-right:7px;border:1px solid #ccc;"></span>
+            <span style="font-weight:600;">${u}</span>
+            <span style="font-size:12px;color:#888;margin-left:6px;">(${info.rol})</span>
+            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:auto;">Eliminar</button>
+            <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
+          </li>`;
+        });
+        html += '</ul>';
+        document.getElementById('usuariosSidebarLista').innerHTML = html;
+      });
+    }
+
     function mostrarPanelAdmin() {
       db.ref('registros').once('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -678,25 +692,13 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
           + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
         + `</div>`;
         let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
-        let gestionUsuariosHtml = `
-          <div style="margin-bottom:18px;">
-            <h3>Gestión de usuarios</h3>
-            <input id="nuevoUsuario" placeholder="Usuario" style="margin-right:4px;">
-            <input id="nuevaClave" placeholder="Clave" type="password" style="margin-right:4px;">
-            <select id="nuevoRol" style="margin-right:4px;">
-              <option value="usuario">Usuario</option>
-              <option value="superadmin">Superadmin</option>
-            </select>
-            <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="margin-bottom:6px;">Agregar usuario</button>
-            <div id="usuariosLista"></div>
-          </div>
-        `;
         document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
         document.getElementById('adminRegistros').innerHTML = '';
         document.getElementById('adminModal').style.display = 'flex';
-        poblarSidebarUsuarios(); // <-- Añade esto aquí
+        poblarSidebarUsuarios();
       });
     }
+
     window.eliminarTodosRegistrosGlobales = function() {
       Swal.fire({
         title: '¿Seguro?',
@@ -713,6 +715,7 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         }
       });
     }
+
     window.agregarUsuario = function() {
       const usuario = document.getElementById('nuevoUsuario').value.trim().toLowerCase();
       const clave = document.getElementById('nuevaClave').value.trim();
@@ -728,32 +731,10 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         }
         document.getElementById('nuevoUsuario').value = '';
         document.getElementById('nuevaClave').value = '';
-        mostrarListaUsuarios();
         Swal.fire('¡Listo!', 'Usuario agregado', 'success');
       });
     };
-    // Modifica mostrarListaUsuarios para actualizar en tiempo real el estado de conexión
-    function mostrarListaUsuarios() {
-      // Usar 'on' para escuchar cambios en tiempo real
-      db.ref('usuarios').on('value', snap => {
-        const data = snap.val() || {};
-        let html = '<ul style="list-style:none;padding:0;">';
-        Object.entries(data).forEach(([u, info]) => {
-          const conectado = info.conectado ? '#43b97b' : '#bbb';
-          html += `<li style="margin-bottom:8px;display:flex;align-items:center;">
-            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${conectado};margin-right:7px;border:1px solid #ccc;"></span>
-            <span style="font-weight:600;">${u}</span>
-            <span style="font-size:12px;color:#888;margin-left:6px;">(${info.rol})</span>
-            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:auto;">Eliminar</button>
-            <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
-          </li>`;
-        });
-        html += '</ul>';
-        document.getElementById('usuariosLista').innerHTML = html;
-        // Actualiza también en la barra lateral del panel admin
-        document.getElementById('usuariosSidebarLista').innerHTML = html;
-      });
-    }
+
     window.eliminarUsuario = function(usuario) {
       Swal.fire({
         title: '¿Eliminar usuario?',
@@ -769,36 +750,35 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
               Swal.fire('Error', 'Error al eliminar', 'error');
               return;
             }
-            mostrarListaUsuarios();
             Swal.fire('Eliminado', 'Usuario eliminado', 'success');
           });
         }
       });
     };
+
     window.resetClaveUsuario = function(usuario) {
-  Swal.fire({
-    title: 'Resetear clave',
-    text: `¿Seguro que deseas resetear la clave del usuario "${usuario}" a "123"?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, resetear',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      db.ref('usuarios/' + usuario + '/clave').set('123', err => {
-        if (err) {
-          Swal.fire('Error', 'No se pudo resetear la clave.', 'error');
-        } else {
-          Swal.fire('¡Listo!', 'Clave reseteada a "123".', 'success');
+      Swal.fire({
+        title: 'Resetear clave',
+        text: `¿Seguro que deseas resetear la clave del usuario "${usuario}" a "123"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, resetear',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          db.ref('usuarios/' + usuario + '/clave').set('123', err => {
+            if (err) {
+              Swal.fire('Error', 'No se pudo resetear la clave.', 'error');
+            } else {
+              Swal.fire('¡Listo!', 'Clave reseteada a "123".', 'success');
+            }
+          });
         }
       });
-    }
-  });
-};
+    };
 
     // --- Inicialización y restauración de estado ---
     window.addEventListener('DOMContentLoaded', () => {
-      // Restaurar inicio pendiente
       const inicioPend = localStorage.getItem('inicio_pendiente');
       if (inicioPend) {
         try {
@@ -814,16 +794,13 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         } catch(e) {}
       }
       aplicarModoOscuro();
-      // Mostrar login al cargar
       mostrarLogin();
       setAdminBtnByRol(null);
-      // Eliminar historial local y remoto
       window.eliminarHistorial = function() {
         if (confirm('¿Seguro que deseas eliminar tu historial?')) {
           const usuario = usuarioActual || document.getElementById('nombre').value.trim().toLowerCase();
           db.ref('registros').once('value', snapshot => {
             const data = snapshot.val() || {};
-            // Elimina solo los registros del usuario actual
             Object.entries(data).forEach(([key, registro]) => {
               if (registro.nombre && registro.nombre.toLowerCase() === usuario) {
                 db.ref('registros/' + key).remove();
@@ -836,53 +813,102 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         }
       };
     });
+
     document.getElementById('btnCambiarClave').onclick = async function() {
-  const { value: formValues } = await Swal.fire({
-    title: 'Cambiar clave',
-    html:
-      '<input id="swal-usuario" class="swal2-input" placeholder="Usuario">' +
-      '<input id="swal-clave-actual" type="password" class="swal2-input" placeholder="Clave actual">' +
-      '<input id="swal-nueva-clave" type="password" class="swal2-input" placeholder="Nueva clave">',
-    focusConfirm: false,
-    preConfirm: () => {
-      return [
-        document.getElementById('swal-usuario').value.trim().toLowerCase(),
-        document.getElementById('swal-clave-actual').value.trim(),
-        document.getElementById('swal-nueva-clave').value.trim()
-      ];
-    },
-    confirmButtonText: 'Guardar',
-    showCancelButton: true,
-    cancelButtonText: 'Cancelar'
-  });
+      const { value: formValues } = await Swal.fire({
+        title: 'Cambiar clave',
+        html:
+          '<input id="swal-usuario" class="swal2-input" placeholder="Usuario">' +
+          '<input id="swal-clave-actual" type="password" class="swal2-input" placeholder="Clave actual">' +
+          '<input id="swal-nueva-clave" type="password" class="swal2-input" placeholder="Nueva clave">',
+        focusConfirm: false,
+        preConfirm: () => {
+          return [
+            document.getElementById('swal-usuario').value.trim().toLowerCase(),
+            document.getElementById('swal-clave-actual').value.trim(),
+            document.getElementById('swal-nueva-clave').value.trim()
+          ];
+        },
+        confirmButtonText: 'Guardar',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar'
+      });
 
-  if (!formValues) return; // Cancelado
-
-  const [usuario, claveActual, nuevaClave] = formValues;
-  if (!usuario || !claveActual || !nuevaClave) {
-    Swal.fire('Campos requeridos', 'Completa todos los campos.', 'warning');
-    return;
-  }
-
-  db.ref('usuarios/' + usuario).once('value', snap => {
-    const data = snap.val();
-    if (!data) {
-      Swal.fire('Error', 'Usuario no encontrado.', 'error');
-      return;
-    }
-    if (data.clave !== claveActual) {
-      Swal.fire('Error', 'La clave actual es incorrecta.', 'error');
-      return;
-    }
-    db.ref('usuarios/' + usuario + '/clave').set(nuevaClave, err => {
-      if (err) {
-        Swal.fire('Error', 'No se pudo cambiar la clave.', 'error');
+      if (!formValues) return;
+      const [usuario, claveActual, nuevaClave] = formValues;
+      if (!usuario || !claveActual || !nuevaClave) {
+        Swal.fire('Campos requeridos', 'Completa todos los campos.', 'warning');
         return;
       }
-      Swal.fire('¡Listo!', 'Clave cambiada correctamente.', 'success');
-    });
-  });
-};
+
+      db.ref('usuarios/' + usuario).once('value', snap => {
+        const data = snap.val();
+        if (!data) {
+          Swal.fire('Error', 'Usuario no encontrado.', 'error');
+          return;
+        }
+        if (data.clave !== claveActual) {
+          Swal.fire('Error', 'La clave actual es incorrecta.', 'error');
+          return;
+        }
+        db.ref('usuarios/' + usuario + '/clave').set(nuevaClave, err => {
+          if (err) {
+            Swal.fire('Error', 'No se pudo cambiar la clave.', 'error');
+            return;
+          }
+          Swal.fire('¡Listo!', 'Clave cambiada correctamente.', 'success');
+        });
+      });
+    };
+
+    // Exportar registros a Excel
+    document.getElementById('descargarExcelAdminBtn').onclick = function() {
+      db.ref('registros').once('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registros = Object.values(data);
+        if (registros.length === 0) {
+          Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
+          return;
+        }
+        let totalMin = 0, totalMontos = 0;
+        const rows = registros.map(r => {
+          let min = 0;
+          if (r.duracion) {
+            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+            if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+          totalMin += min;
+          let montoExcel = '';
+          if (r.monto && !isNaN(r.monto)) {
+            totalMontos += parseFloat(r.monto);
+            montoExcel = parseFloat(r.monto).toFixed(2);
+          }
+          return {
+            Nombre: r.nombre || '',
+            Motivo: r.motivo || '',
+            'Monto (USDT)': montoExcel,
+            Día: r.dia || '',
+            Inicio: r.inicio || '',
+            Fin: r.fin || '',
+            Duración: r.duracion || ''
+          };
+        });
+        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
+        rows.push({
+          Nombre: '',
+          Motivo: '',
+          'Monto (USDT)': '',
+          Día: '',
+          Inicio: '',
+          Fin: 'TOTAL USDT',
+          Duración: totalUSDTExcel
+        });
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Registros");
+        XLSX.writeFile(wb, "registros_completos.xlsx");
+      });
+    };
   </script>
 
   <div class="container">
@@ -915,33 +941,33 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
   <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
   <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
-  <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:900px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
-    <!-- Panel lateral de usuarios -->
-    <div id="adminSidebar" style="width:270px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 12px 24px 18px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
-      <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Usuarios</h3>
-      <div id="usuariosSidebarLista"></div>
-      <div style="margin-top:18px;">
-        <input id="nuevoUsuario" placeholder="Usuario" style="margin-bottom:6px;width:90%;">
-        <input id="nuevaClave" placeholder="Clave" type="password" style="margin-bottom:6px;width:90%;">
-        <select id="nuevoRol" style="margin-bottom:6px;width:90%;">
-          <option value="usuario">Usuario</option>
-          <option value="superadmin">Superadmin</option>
-        </select>
-        <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="width:90%;">Agregar usuario</button>
+    <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:900px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
+      <!-- Panel lateral de usuarios -->
+      <div id="adminSidebar" style="width:270px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 12px 24px 18px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
+        <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Usuarios</h3>
+        <div id="usuariosSidebarLista"></div>
+        <div style="margin-top:18px;">
+          <input id="nuevoUsuario" placeholder="Usuario" style="margin-bottom:6px;width:90%;">
+          <input id="nuevaClave" placeholder="Clave" type="password" style="margin-bottom:6px;width:90%;">
+          <select id="nuevoRol" style="margin-bottom:6px;width:90%;">
+            <option value="usuario">Usuario</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
+          <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="width:90%;">Agregar usuario</button>
+        </div>
       </div>
-    </div>
-    <!-- Panel principal admin -->
-    <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
-      <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
-      <h2 style="margin-top:0">Panel de Administración</h2>
-      <div id="adminResumen"></div>
-      <div id="adminRegistros" style="margin-top:18px;"></div>
-      <div style="display: flex; justify-content: center; margin-top: 18px;">
-        <button id="descargarExcelAdminBtn" class="btn" style="width: 60%; min-width: 220px;">Descargar todos los registros (Excel)</button>
+      <!-- Panel principal admin -->
+      <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
+        <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
+        <h2 style="margin-top:0">Panel de Administración</h2>
+        <div id="adminResumen"></div>
+        <div id="adminRegistros" style="margin-top:18px;"></div>
+        <div style="display: flex; justify-content: center; margin-top: 18px;">
+          <button id="descargarExcelAdminBtn" class="btn" style="width: 60%; min-width: 220px;">Descargar todos los registros (Excel)</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
   <!-- Modal de Login Mejorado -->
   <div id="loginModal" style="display:flex;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;background:rgba(30,40,60,0.85);backdrop-filter:blur(2px);">
@@ -967,60 +993,6 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
       <div id="loginError" style="color:#e74c3c;margin-top:14px;display:none;font-size:1rem;text-align:center;"></div>
     </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script type="module">
-    // Descargar todos los registros y el monto total en USDT desde el panel admin
-    document.getElementById('descargarExcelAdminBtn').onclick = function() {
-      db.ref('registros').once('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        const registros = Object.values(data);
-        if (registros.length === 0) {
-          Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
-          return;
-        }
-        // Prepara los datos para Excel
-        let totalMin = 0, totalMontos = 0;
-        const rows = registros.map(r => {
-          let min = 0;
-          if (r.duracion) {
-            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-            if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-          }
-          totalMin += min;
-          let montoExcel = '';
-          if (r.monto && !isNaN(r.monto)) {
-            totalMontos += parseFloat(r.monto);
-            montoExcel = parseFloat(r.monto).toFixed(2);
-          }
-          return {
-            Nombre: r.nombre || '',
-            Motivo: r.motivo || '',
-            'Monto (USDT)': montoExcel,
-            Día: r.dia || '',
-            Inicio: r.inicio || '',
-            Fin: r.fin || '',
-            Duración: r.duracion || ''
-          };
-        });
-        // Agrega una fila de total al final
-        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
-        rows.push({
-          Nombre: '',
-          Motivo: '',
-          'Monto (USDT)': '',
-          Día: '',
-          Inicio: '',
-          Fin: 'TOTAL USDT',
-          Duración: totalUSDTExcel
-        });
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Registros");
-        XLSX.writeFile(wb, "registros_completos.xlsx");
-      }); // <-- este paréntesis y punto y coma cierran la función correctamente
-    };
-  </script>
   <style>
     .swal2-container {
       z-index: 10001 !important;
