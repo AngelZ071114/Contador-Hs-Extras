@@ -761,6 +761,24 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
     }
 
     // --- Funciones globales para HTML ---
+    window.eliminarTodosRegistrosGlobales = function() {
+      Swal.fire({
+        title: '¿Eliminar TODOS los registros?',
+        text: 'Esto eliminará todos los registros del sistema (solo desde el panel admin).',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar todo',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          db.ref('registros').remove(err => {
+            if (err) return Swal.fire('Error', 'No se pudo eliminar.', 'error');
+            Swal.fire('Eliminado', 'Todos los registros han sido eliminados.', 'success');
+            if (typeof window.mostrarPanelAdmin === 'function') window.mostrarPanelAdmin();
+          });
+        }
+      });
+    };
     window.mostrarPanelAdmin = mostrarPanelAdmin;
     window.mostrarDetalleUsuario = mostrarDetalleUsuario;
     window.eliminarRegistroEspecifico = eliminarRegistroEspecifico;
