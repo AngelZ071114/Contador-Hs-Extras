@@ -5,6 +5,9 @@
   <title>Contabilizador de Horas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body {
       margin: 0; padding: 0;
@@ -386,552 +389,560 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   </style>
 </head>
 <body>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script type="module">
-  // --- Firebase ---
-  const firebaseConfig = {
-    apiKey: "AIzaSyDhgZV2UsMn04-z4AgP_cYB5IYfm-P9zZU",
-    authDomain: "contador-de-hs-extras.firebaseapp.com",
-    databaseURL: "https://contador-de-hs-extras-default-rtdb.firebaseio.com",
-    projectId: "contador-de-hs-extras",
-    storageBucket: "contador-de-hs-extras.firebasestorage.app",
-    messagingSenderId: "965974169282",
-    appId: "1:965974169282:web:f94b2ed159a5c1897a4d5b"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+    // --- Configuración Firebase ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhgZV2UsMn04-z4AgP_cYB5IYfm-P9zZU",
+      authDomain: "contador-de-hs-extras.firebaseapp.com",
+      databaseURL: "https://contador-de-hs-extras-default-rtdb.firebaseio.com",
+      projectId: "contador-de-hs-extras",
+      storageBucket: "contador-de-hs-extras.firebasestorage.app",
+      messagingSenderId: "965974169282",
+      appId: "1:965974169282:web:f94b2ed159a5c1897a4d5b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-  // --- Utilidades ---
-  const obtenerHoraLocalVE = (date = new Date()) =>
-    new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
-  const formatearHora = date =>
-    date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    // --- Utilidades ---
+    const obtenerHoraLocalVE = (date = new Date()) =>
+      new Date(date.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+    const formatearHora = date =>
+      date.toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const getInputValue = id => document.getElementById(id).value.trim();
 
-  // --- Estado global ---
-  let inicio = null, usuarioActual = null, rolActual = null;
+    // --- Estado global ---
+    let inicio = null, usuarioActual = null, rolActual = null;
 
-  // --- Login ---
-  function mostrarLogin() {
-    document.getElementById('loginModal').style.display = 'flex';
-  }
-  function ocultarLogin() {
-    document.getElementById('loginModal').style.display = 'none';
-  }
-  function setAdminBtnByRol(rol) {
-    document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
-  }
-  function marcarConectado(usuario, conectado) {
-    db.ref('usuarios/' + usuario + '/conectado').set(conectado);
-  }
+    // --- Login y sesión ---
+    const mostrarLogin = () => document.getElementById('loginModal').style.display = 'flex';
+    const ocultarLogin = () => document.getElementById('loginModal').style.display = 'none';
+    const setAdminBtnByRol = rol =>
+      document.getElementById('adminBtn').style.display = rol === 'superadmin' ? 'flex' : 'none';
+    const marcarConectado = (usuario, conectado) =>
+      db.ref('usuarios/' + usuario + '/conectado').set(conectado);
 
-  // --- Eventos de login ---
-  document.getElementById('loginBtn').onclick = loginUsuario;
-  ['loginUsuario', 'loginClave'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') loginUsuario();
-    });
-  });
+    const mostrarError = (id, mensaje) => {
+      const el = document.getElementById(id);
+      el.textContent = mensaje;
+      el.style.display = 'block';
+    };
 
-  function loginUsuario() {
-    const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
-    const clave = document.getElementById('loginClave').value.trim();
-    db.ref('usuarios/' + usuario).once('value', snap => {
-      const data = snap.val();
-      if (data && data.clave === clave) {
-        usuarioActual = usuario;
-        rolActual = data.rol; // <-- ASIGNA EL ROL AQUÍ
-        localStorage.setItem('usuarioActual', usuario); // Guardar usuario logueado
-        ocultarLogin();
-        document.getElementById('nombre').value = usuario;
-        setAdminBtnByRol(rolActual); // Ahora sí funcionará correctamente
-        marcarConectado(usuario, true);
-        window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
-        cargarHistorialUsuario();
-
-        // NUEVO: Mostrar saludo y ocultar input de nombre
-        document.getElementById('saludoUsuario').style.display = 'block';
-        document.getElementById('saludoUsuario').textContent = `Hola, ${usuario} 💪, es un placer ver a un chambeador pro max 😎.`;
-        document.getElementById('nombre').style.display = 'none';
-      } else {
-        mostrarError('loginError', 'Usuario o clave incorrectos');
-      }
-    });
-  }
-
-  function mostrarError(id, mensaje) {
-    const el = document.getElementById(id);
-    el.textContent = mensaje;
-    el.style.display = 'block';
-  }
-
-  // --- Modo oscuro ---
-  function aplicarModoOscuro() {
-    const dark = localStorage.getItem('modo_oscuro') === '1';
-    document.body.classList.toggle('manual-dark', dark);
-    const btn = document.getElementById('darkModeToggle');
-    btn.textContent = dark ? '☀️' : '🌙';
-    btn.style.background = dark ? '#23272e' : '#fff';
-    btn.style.color = dark ? '#e0e6ef' : '#23272e';
-  }
-  document.getElementById('darkModeToggle').onclick = () => {
-    const dark = !(localStorage.getItem('modo_oscuro') === '1');
-    localStorage.setItem('modo_oscuro', dark ? '1' : '0');
-    aplicarModoOscuro();
-  };
-
-  // --- Inicio y Fin ---
-  window.marcarInicio = function() {
-    const nombre = getInputValue("nombre");
-    const motivo = getInputValue("motivo");
-    if (!nombre || !motivo) return Swal.fire('Campo requerido', 'Completa nombre y motivo.', 'warning');
-    inicio = obtenerHoraLocalVE();
-    setInfoInicio(inicio);
-    localStorage.setItem('inicio_pendiente', JSON.stringify({ nombre, motivo, inicio: inicio.toISOString() }));
-  };
-
-  window.marcarFin = function() {
-    if (!inicio) return Swal.fire('Atención', 'Primero marca la hora de inicio.', 'warning');
-    const nombre = getInputValue("nombre");
-    if (!nombre) return Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
-    let motivo = getInputValue("motivo");
-    let monto = 0, contingencia = false;
-    const inicioPend = localStorage.getItem('inicio_pendiente');
-    if (inicioPend) contingencia = !!JSON.parse(inicioPend).contingencia;
-    if (contingencia) {
-      motivo += (motivo ? ' | ' : '') + 'Contingencia: 10 USDT';
-      monto += 10;
-    }
-    const fin = obtenerHoraLocalVE();
-    setInfoFin(fin, inicio);
-    const duracionTexto = calcularDuracionTexto(inicio, fin);
-    const hoy = obtenerHoraLocalVE();
-    const dia = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
-    const registro = { nombre, motivo, dia, inicio: formatearHora(inicio), fin: formatearHora(fin), duracion: duracionTexto };
-    if (monto > 0) registro.monto = monto.toFixed(2);
-    db.ref('registros').push(registro);
-    inicio = null;
-    localStorage.removeItem('inicio_pendiente');
-  };
-
-  function getInputValue(id) {
-    return document.getElementById(id).value.trim();
-  }
-  function setInfoInicio(inicio) {
-    document.getElementById("horaInicio").textContent = formatearHora(inicio);
-    document.getElementById("horaFin").textContent = "-";
-    document.getElementById("duracion").textContent = "-";
-  }
-  function setInfoFin(fin, inicio) {
-    document.getElementById("horaFin").textContent = formatearHora(fin);
-    document.getElementById("duracion").textContent = calcularDuracionTexto(inicio, fin);
-  }
-  function calcularDuracionTexto(inicio, fin) {
-    const duracionMs = fin - inicio;
-    const segundos = Math.floor(duracionMs / 1000);
-    const minutos = Math.floor(segundos / 60);
-    const horas = Math.floor(minutos / 60);
-    const restoMin = minutos % 60;
-    const restoSeg = segundos % 60;
-    return `${horas}h ${restoMin}m ${restoSeg}s`;
-  }
-
-  // --- Motivo trabajo directo ---
-  window.agregarMotivoTrabajo = function() {
-    const motivoTrabajo = getInputValue("motivoTrabajo");
-    const montoPagar = getInputValue("montoPagar");
-    const nombre = getInputValue("nombre");
-    if (!motivoTrabajo || !montoPagar || isNaN(montoPagar) || !nombre)
-      return Swal.fire('Campo requerido', 'Completa todos los campos y monto válido.', 'warning');
-    const hoy = new Date();
-    const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
-    db.ref('registros').push({ nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha });
-    document.getElementById("motivoTrabajo").value = "";
-    document.getElementById("montoPagar").value = "";
-    Swal.fire('¡Listo!', 'Motivo de trabajo registrado correctamente.', 'success');
-  };
-
-  // --- Contingencia ---
-  document.getElementById("contingenciaBtn").onclick = function() {
-    if (!inicio) return Swal.fire('Atención', 'Debes iniciar las horas extras.', 'warning');
-    const inicioPend = localStorage.getItem('inicio_pendiente');
-    if (inicioPend) {
-      let data = JSON.parse(inicioPend);
-      data.contingencia = true;
-      localStorage.setItem('inicio_pendiente', JSON.stringify(data));
-    }
-    Swal.fire('Contingencia', 'La contingencia se sumará al siguiente registro cuando marques fin.', 'info');
-  };
-
-  // --- Historial y resumen ---
-  function mostrarHistorialFirebase(registros) {
-    const historial = document.getElementById("historial");
-    historial.innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
-    registros.forEach((registro) => {
-      const item = document.createElement("div");
-      item.className = "historial-item";
-      let fechaDMY = '-';
-      if (registro.dia) {
-        const [y, m, d] = registro.dia.split('-');
-        fechaDMY = `${d}-${m}-${y}`;
-      }
-      let html = `<strong>👤</strong> ${registro.nombre}`;
-      if (registro.motivo) html += `<span class='historial-motivo'> | ${registro.motivo}</span>`;
-      if (registro.monto) html += `<span class='historial-monto'> | ${registro.monto} USDT</span>`;
-      html += `<span class='historial-fecha'>📅 ${fechaDMY}</span>`;
-      if (registro.inicio && registro.fin) html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
-      if (registro.duracion) html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
-      item.innerHTML = html;
-      historial.appendChild(item);
-    });
-  }
-  function actualizarResumenHorasFirebase(registros) {
-    let totalMin = 0, monto = 0;
-    registros.forEach(r => {
-      if (r.duracion) {
-        const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-        if (match) totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-      }
-      if (r.monto && !isNaN(r.monto)) monto += parseFloat(r.monto);
-    });
-    monto += totalMin * 0.025;
-    const horas = Math.floor(totalMin / 60);
-    const mins = totalMin % 60;
-    document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(2)} USDT)`;
-  }
-  function cargarHistorialUsuario() {
-    const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
-    db.ref('registros').on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const registrosFirebase = Object.values(data);
-      const registrosUsuario = registrosFirebase.filter(r => r.nombre && r.nombre.toLowerCase() === usuario);
-      mostrarHistorialFirebase(registrosUsuario);
-      actualizarResumenHorasFirebase(registrosUsuario);
-    });
-  }
-
-  // --- Panel admin y gestión de usuarios ---
-  document.getElementById('adminBtn').onclick = () => rolActual === 'superadmin' && mostrarPanelAdmin();
-  document.getElementById('closeAdminModal').onclick = () => document.getElementById('adminModal').style.display = 'none';
-
-  function poblarSidebarUsuarios() {
-    db.ref('usuarios').on('value', snap => {
-      const data = snap.val() || {};
-      let html = '<ul style="list-style:none;padding:0;margin:0;">';
-      Object.entries(data).forEach(([u, info]) => {
-        const conectado = info.conectado ? '#43b97b' : '#bbb';
-        html += `<li style="margin-bottom:8px;display:flex;align-items:center;">
-          <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${conectado};margin-right:7px;border:1px solid #ccc;"></span>
-          <span style="font-weight:600;">${u}</span>
-          <span style="font-size:12px;color:#888;margin-left:6px;">(${info.rol})</span>
-          <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:auto;">Eliminar</button>
-          <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
-        </li>`;
+    function loginUsuario() {
+      const usuario = getInputValue('loginUsuario').toLowerCase();
+      const clave = getInputValue('loginClave');
+      db.ref('usuarios/' + usuario).once('value', snap => {
+        const data = snap.val();
+        if (data && data.clave === clave) {
+          usuarioActual = usuario;
+          rolActual = data.rol;
+          localStorage.setItem('usuarioActual', usuario);
+          ocultarLogin();
+          document.getElementById('nombre').value = usuario;
+          setAdminBtnByRol(rolActual);
+          marcarConectado(usuario, true);
+          window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
+          cargarHistorialUsuario();
+          document.getElementById('saludoUsuario').style.display = 'block';
+          document.getElementById('saludoUsuario').textContent = `Hola, ${usuario}, ¿cómo te preparas para la chamba? 😎`;
+          document.getElementById('nombre').style.display = 'none';
+        } else {
+          mostrarError('loginError', 'Usuario o clave incorrectos');
+        }
       });
-      html += '</ul>';
-      document.getElementById('usuariosSidebarLista').innerHTML = html;
-    });
-  }
+    }
 
-  function mostrarPanelAdmin() {
-    db.ref('registros').once('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const registros = Object.values(data);
-      const resumen = {};
-      let totalMin = 0, totalMontos = 0;
+    // --- Modo oscuro ---
+    function aplicarModoOscuro() {
+      const dark = localStorage.getItem('modo_oscuro') === '1';
+      document.body.classList.toggle('manual-dark', dark);
+      const btn = document.getElementById('darkModeToggle');
+      btn.textContent = dark ? '☀️' : '🌙';
+      btn.style.background = dark ? '#23272e' : '#fff';
+      btn.style.color = dark ? '#e0e6ef' : '#23272e';
+    }
+
+    // --- Inicio y Fin de jornada ---
+    window.marcarInicio = () => {
+      const nombre = getInputValue("nombre");
+      const motivo = getInputValue("motivo");
+      if (!nombre || !motivo) return Swal.fire('Campo requerido', 'Indica el motivo de la chamba.', 'warning');
+      inicio = obtenerHoraLocalVE();
+      setInfoInicio(inicio);
+      localStorage.setItem('inicio_pendiente', JSON.stringify({ nombre, motivo, inicio: inicio.toISOString() }));
+    };
+
+    window.marcarFin = () => {
+      if (!inicio) return Swal.fire('Atención', 'Primero marca la hora de inicio.', 'warning');
+      const nombre = getInputValue("nombre");
+      if (!nombre) return Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
+      let motivo = getInputValue("motivo");
+      let monto = 0, contingencia = false;
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) contingencia = !!JSON.parse(inicioPend).contingencia;
+      if (contingencia) {
+        motivo += (motivo ? ' | ' : '') + 'Contingencia: 10 USDT';
+        monto += 10;
+      }
+      const fin = obtenerHoraLocalVE();
+      setInfoFin(fin, inicio);
+      const duracionTexto = calcularDuracionTexto(inicio, fin);
+      const hoy = obtenerHoraLocalVE();
+      const dia = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+      const registro = { nombre, motivo, dia, inicio: formatearHora(inicio), fin: formatearHora(fin), duracion: duracionTexto };
+      if (monto > 0) registro.monto = monto.toFixed(2);
+      db.ref('registros').push(registro);
+      inicio = null;
+      localStorage.removeItem('inicio_pendiente');
+    };
+
+    const setInfoInicio = inicio => {
+      document.getElementById("horaInicio").textContent = formatearHora(inicio);
+      document.getElementById("horaFin").textContent = "-";
+      document.getElementById("duracion").textContent = "-";
+    };
+    const setInfoFin = (fin, inicio) => {
+      document.getElementById("horaFin").textContent = formatearHora(fin);
+      document.getElementById("duracion").textContent = calcularDuracionTexto(inicio, fin);
+    };
+    const calcularDuracionTexto = (inicio, fin) => {
+      const duracionMs = fin - inicio;
+      const segundos = Math.floor(duracionMs / 1000);
+      const minutos = Math.floor(segundos / 60);
+      const horas = Math.floor(minutos / 60);
+      const restoMin = minutos % 60;
+      const restoSeg = segundos % 60;
+      return `${horas}h ${restoMin}m ${restoSeg}s`;
+    };
+
+    // --- Motivo trabajo directo ---
+    window.agregarMotivoTrabajo = () => {
+      const motivoTrabajo = getInputValue("motivoTrabajo");
+      const montoPagar = getInputValue("montoPagar");
+      const nombre = getInputValue("nombre");
+      if (!motivoTrabajo || !montoPagar || isNaN(montoPagar) || !nombre)
+        return Swal.fire('Campo requerido', 'Indica el motivo y monto a pagar.', 'warning');
+      const hoy = new Date();
+      const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+      db.ref('registros').push({ nombre, motivo: motivoTrabajo, monto: montoPagar, dia: fecha });
+      document.getElementById("motivoTrabajo").value = "";
+      document.getElementById("montoPagar").value = "";
+      Swal.fire('¡Listo!', 'Motivo de trabajo registrado correctamente.', 'success');
+    };
+
+    // --- Contingencia ---
+    document.getElementById("contingenciaBtn").onclick = () => {
+      if (!inicio) return Swal.fire('Atención', 'Debes iniciar las horas extras.', 'warning');
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) {
+        let data = JSON.parse(inicioPend);
+        data.contingencia = true;
+        localStorage.setItem('inicio_pendiente', JSON.stringify(data));
+      }
+      Swal.fire('Contingencia', 'La contingencia se sumará al siguiente registro cuando marques fin.', 'info');
+    };
+
+    // --- Historial y resumen ---
+    function mostrarHistorialFirebase(registros) {
+      const historial = document.getElementById("historial");
+      historial.innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+      registros.forEach((registro) => {
+        const item = document.createElement("div");
+        item.className = "historial-item";
+        let fechaDMY = '-';
+        if (registro.dia) {
+          const [y, m, d] = registro.dia.split('-');
+          fechaDMY = `${d}-${m}-${y}`;
+        }
+        let html = `<strong>👤</strong> ${registro.nombre}`;
+        if (registro.motivo) html += `<span class='historial-motivo'> | ${registro.motivo}</span>`;
+        if (registro.monto) html += `<span class='historial-monto'> | ${registro.monto} USDT</span>`;
+        html += `<span class='historial-fecha'>📅 ${fechaDMY}</span>`;
+        if (registro.inicio && registro.fin) html += `<span class='historial-extra'>⏰ ${registro.inicio} - ${registro.fin}</span>`;
+        if (registro.duracion) html += `<span class='historial-extra'>⏳ ${registro.duracion}</span>`;
+        item.innerHTML = html;
+        historial.appendChild(item);
+      });
+    }
+    function actualizarResumenHorasFirebase(registros) {
+      let totalMin = 0, monto = 0;
       registros.forEach(r => {
-        const key = r.nombre + '|' + (r.motivo || '-');
-        if(!resumen[key]) resumen[key] = {min:0, count:0, monto:0, motivo: r.motivo || '-'};
-        if(r.duracion) {
+        if (r.duracion) {
           const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-          if(match) {
-            const min = parseInt(match[1])*60 + parseInt(match[2]);
-            resumen[key].min += min;
-            totalMin += min;
+          if (match) totalMin += parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        }
+        if (r.monto && !isNaN(r.monto)) monto += parseFloat(r.monto);
+      });
+      monto += totalMin * 0.025;
+      const horas = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      document.getElementById("resumenHoras").textContent = `Horas trabajadas: ${horas}h ${mins}m (Total: ${monto.toFixed(2)} USDT)`;
+    }
+    function cargarHistorialUsuario() {
+      const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
+      db.ref('registros').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registrosFirebase = Object.values(data);
+        const registrosUsuario = registrosFirebase.filter(r => r.nombre && r.nombre.toLowerCase() === usuario);
+        mostrarHistorialFirebase(registrosUsuario);
+        actualizarResumenHorasFirebase(registrosUsuario);
+      });
+    }
+
+    // --- Panel admin y gestión de usuarios ---
+    document.getElementById('adminBtn').onclick = () => rolActual === 'superadmin' && mostrarPanelAdmin();
+    document.getElementById('closeAdminModal').onclick = () => document.getElementById('adminModal').style.display = 'none';
+
+    function poblarSidebarUsuarios() {
+      db.ref('usuarios').on('value', snap => {
+        const data = snap.val() || {};
+        let html = '<ul style="list-style:none;padding:0;margin:0;">';
+        Object.entries(data).forEach(([u, info]) => {
+          const conectado = info.conectado ? '#43b97b' : '#bbb';
+          html += `<li style="margin-bottom:8px;display:flex;align-items:center;">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${conectado};margin-right:7px;border:1px solid #ccc;"></span>
+            <span style="font-weight:600;">${u}</span>
+            <span style="font-size:12px;color:#888;margin-left:6px;">(${info.rol})</span>
+            <button onclick="window.eliminarUsuario('${u}')" class="btn btn-eliminar" style="padding:2px 8px;font-size:13px;margin-left:auto;">Eliminar</button>
+            <button onclick="window.resetClaveUsuario('${u}')" class="btn btn-contingencia" style="padding:2px 8px;font-size:13px;margin-left:6px;">Reset clave</button>
+          </li>`;
+        });
+        html += '</ul>';
+        document.getElementById('usuariosSidebarLista').innerHTML = html;
+      });
+    }
+
+    function mostrarPanelAdmin() {
+      db.ref('registros').once('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registros = Object.entries(data).map(([key, reg]) => ({ ...reg, _key: key }));
+
+        // Agrupar por nombre de usuario
+        const resumenPorUsuario = {};
+        let totalMin = 0, totalMontos = 0;
+        registros.forEach(r => {
+          const nombre = r.nombre || '-';
+          if (!resumenPorUsuario[nombre]) resumenPorUsuario[nombre] = { min: 0, count: 0, monto: 0 };
+          if (r.duracion) {
+            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+            if (match) {
+              const min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+              resumenPorUsuario[nombre].min += min;
+              totalMin += min;
+            }
           }
-        }
-        if(r.monto && !isNaN(r.monto)) {
-          resumen[key].monto += parseFloat(r.monto);
-          totalMontos += parseFloat(r.monto);
-        }
-        resumen[key].count++;
-      });
-      const resumenOrdenado = Object.entries(resumen).sort((a, b) => {
-        const [nombreA, motivoA] = a[0].split('|');
-        const [nombreB, motivoB] = b[0].split('|');
-        if (nombreA === nombreB) return motivoA.localeCompare(motivoB);
-        return nombreA.localeCompare(nombreB);
-      });
-      let resumenHtml = `
-  <div style='overflow-x:auto; margin-bottom:18px;'>
-    <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
-    <table style='border-collapse:collapse;width:100%;min-width:400px;'>
-      <thead>
-        <tr style='background:#f7fafd;'>
-          <th style='border:1px solid #ccc;padding:8px;'>Nombre</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Fecha</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Horas</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Minutos</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Registros</th>
-          <th style='border:1px solid #ccc;padding:8px;'>Monto Total (USDT)</th>
-        </tr>
-      </thead>
-      <tbody>
+          if (r.monto && !isNaN(r.monto)) {
+            resumenPorUsuario[nombre].monto += parseFloat(r.monto);
+            totalMontos += parseFloat(r.monto);
+          }
+          resumenPorUsuario[nombre].count++;
+        });
+
+        // Tabla resumen
+        let resumenHtml = `
+<div style='overflow-x:auto; margin-bottom:18px;'>
+  <h3 style='margin:0 0 8px 0;font-size:1.3rem;'>Resumen General</h3>
+  <table style='border-collapse:collapse;width:100%;min-width:400px;'>
+    <thead>
+      <tr style='background:#f7fafd;'>
+        <th style='border:1px solid #ccc;padding:8px;'>Nombre</th>
+        <th style='border:1px solid #ccc;padding:8px;'>Horas</th>
+        <th style='border:1px solid #ccc;padding:8px;'>Minutos</th>
+        <th style='border:1px solid #ccc;padding:8px;'>Registros</th>
+        <th style='border:1px solid #ccc;padding:8px;'>Monto Total (USDT)</th>
+      </tr>
+    </thead>
+    <tbody>
 `;
-      resumenOrdenado.forEach(([key, data]) => {
-        const [nombre, motivo] = key.split('|');
-        const h = Math.floor(data.min/60), m = data.min%60;
-        const montoTiempo = data.min * 0.025;
-        const montoTotal = montoTiempo + data.monto;
-        // Obtener la(s) fecha(s) de los registros de este grupo
-        const fechas = registros
-          .filter(r => (r.nombre + '|' + (r.motivo || '-')) === key)
-          .map(r => r.dia)
-          .filter(Boolean)
-          .filter((v, i, arr) => arr.indexOf(v) === i) // Únicas
-          .sort();
-        const fechaStr = fechas.length === 1
-          ? (fechas[0] ? fechas[0].split('-').reverse().join('/') : '')
-          : fechas.map(f => f.split('-').reverse().join('/')).join(', ');
+        Object.entries(resumenPorUsuario).forEach(([nombre, data]) => {
+          const h = Math.floor(data.min / 60), m = data.min % 60;
+          const montoTiempo = data.min * 0.025;
+          const montoTotal = montoTiempo + data.monto;
+          resumenHtml += `
+            <tr>
+              <td style='border:1px solid #ccc;padding:8px;cursor:pointer;color:#357abd;font-weight:600;text-decoration:underline;' onclick="window.mostrarDetalleUsuario('${nombre.replace(/'/g, "\\'")}')">${nombre}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
+              <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(2)}</td>
+            </tr>
+          `;
+        });
         resumenHtml += `
+        </tbody>
+      </table>
+    </div>
+    `;
+        let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(2);
+        resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;margin-bottom:18px;'>`
+          + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>`
+          + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
+          + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
+          + `</div>`;
+        let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
+        document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
+        document.getElementById('adminRegistros').innerHTML = '';
+        document.getElementById('adminModal').style.display = 'flex';
+        poblarSidebarUsuarios();
+        window._registrosAdmin = registros;
+      });
+    }
+
+    function mostrarDetalleUsuario(nombre) {
+      const registros = (window._registrosAdmin || []).filter(r => (r.nombre || '-') === nombre);
+      let html = `
+        <button class="btn" onclick="window.mostrarPanelAdmin()" style="margin-bottom:18px;">⬅️ Volver al resumen</button>
+        <h3 style="margin-top:0;margin-bottom:14px;font-size:1.2rem;color:#357abd;">Registros de <span style="color:#43b97b">${nombre}</span></h3>
+        <div style='overflow-x:auto;'>
+          <table style='border-collapse:collapse;width:100%;min-width:400px;'>
+            <thead>
+              <tr style='background:#f7fafd;'>
+                <th style='border:1px solid #ccc;padding:8px;'>Motivo</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Fecha</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Inicio</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Fin</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Duración</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Monto (USDT)</th>
+                <th style='border:1px solid #ccc;padding:8px;'>Eliminar</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      registros.forEach(r => {
+        html += `
           <tr>
-            <td style='border:1px solid #ccc;padding:8px;'>${nombre}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${motivo}</td>
-            <td style='border:1px solid #ccc;padding:8px;'>${fechaStr}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${h}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${m}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${data.count}</td>
-            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${montoTotal.toFixed(2)}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${r.motivo || '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${r.dia || '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${r.inicio || '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${r.fin || '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;'>${r.duracion || '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;text-align:right;'>${r.monto ? parseFloat(r.monto).toFixed(2) : '-'}</td>
+            <td style='border:1px solid #ccc;padding:8px;text-align:center;'>
+              <button onclick="window.eliminarRegistroEspecifico('${r._key}','${nombre.replace(/'/g, "\\'")}')" class="btn btn-eliminar" title="Eliminar registro" style="padding:4px 10px;font-size:17px;"><span style="pointer-events:none;">🗑️</span></button>
+            </td>
           </tr>
         `;
       });
-      resumenHtml += `
+      html += `
             </tbody>
           </table>
         </div>
       `;
-      let totalUSDT = (totalMin * 0.025 + totalMontos).toFixed(2);
-      resumenHtml += `<div style='background:#f7fafd;border-radius:12px;padding:18px 28px;box-shadow:0 2px 10px #4a90e220;display:flex;flex-direction:column;align-items:center;min-width:170px;margin-bottom:18px;'>`
-        + `<span style='font-size:1.1rem;color:#357abd;font-weight:600;'>⏳ Horas totales</span>`
-        + `<span style='font-size:2.2rem;font-weight:bold;color:#357abd;margin-top:4px;'>${Math.floor(totalMin/60)}h ${totalMin%60}m</span>`
-        + `<span style='font-size:1.1rem;color:#43b97b;font-weight:600;margin-top:8px;'>≈ ${totalUSDT} USDT</span>`
-        + `</div>`;
-      let eliminarBtn = `<button onclick='window.eliminarTodosRegistrosGlobales()' class='btn btn-eliminar'>🗑️ Eliminar todos los registros</button>`;
-      document.getElementById('adminResumen').innerHTML = eliminarBtn + resumenHtml;
+      document.getElementById('adminResumen').innerHTML = html;
       document.getElementById('adminRegistros').innerHTML = '';
-      document.getElementById('adminModal').style.display = 'flex';
-      poblarSidebarUsuarios();
-    });
-  }
-
-  window.eliminarTodosRegistrosGlobales = function() {
-    Swal.fire({
-      title: '¿Seguro?',
-      text: '¿Seguro que deseas eliminar TODOS los registros?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        db.ref('registros').remove();
-        document.getElementById('adminModal').style.display = 'none';
-        Swal.fire('Eliminado', 'Todos los registros han sido eliminados.', 'success');
-      }
-    });
-  }
-
-  window.agregarUsuario = function() {
-    const usuario = getInputValue('nuevoUsuario').toLowerCase();
-    const rol = getInputValue('nuevoRol');
-    if (!usuario) return Swal.fire('Campos requeridos', 'Usuario requerido', 'warning');
-    db.ref('usuarios/' + usuario).set({ usuario, clave: '123', rol }, err => {
-      if (err) return Swal.fire('Error', 'Error al agregar usuario', 'error');
-      document.getElementById('nuevoUsuario').value = '';
-      Swal.fire('¡Listo!', 'Usuario agregado (clave: 123)', 'success');
-    });
-  };
-
-  window.eliminarUsuario = function(usuario) {
-    Swal.fire({
-      title: '¿Eliminar usuario?',
-      text: '¿Eliminar usuario ' + usuario + '?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        db.ref('usuarios/' + usuario).remove(err => {
-          if (err) return Swal.fire('Error', 'Error al eliminar', 'error');
-          Swal.fire('Eliminado', 'Usuario eliminado', 'success');
-        });
-      }
-    });
-  };
-
-  window.resetClaveUsuario = function(usuario) {
-    Swal.fire({
-      title: 'Resetear clave',
-      text: `¿Seguro que deseas resetear la clave del usuario "${usuario}" a "123"?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, resetear',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        db.ref('usuarios/' + usuario + '/clave').set('123', err => {
-          if (err) Swal.fire('Error', 'No se pudo resetear la clave.', 'error');
-          else Swal.fire('¡Listo!', 'Clave reseteada a "123".', 'success');
-        });
-      }
-    });
-  };
-
-  // --- Inicialización y restauración de estado ---
-  window.addEventListener('DOMContentLoaded', () => {
-  usuarioActual = localStorage.getItem('usuarioActual') || null;
-  if (!usuarioActual) {
-    mostrarLogin();
-    setAdminBtnByRol(null);
-  }
-    const inicioPend = localStorage.getItem('inicio_pendiente');
-    if (inicioPend) {
-      try {
-        const data = JSON.parse(inicioPend);
-        if (data && data.inicio) {
-          inicio = new Date(data.inicio);
-          document.getElementById("nombre").value = data.nombre || '';
-          document.getElementById("motivo").value = data.motivo || '';
-          setInfoInicio(inicio);
-        }
-      } catch(e) {}
     }
-    aplicarModoOscuro();
-    mostrarLogin();
-    setAdminBtnByRol(null);
-    window.eliminarHistorial = function() {
-      if (confirm('¿Seguro que deseas eliminar tu historial?')) {
-        const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
-        db.ref('registros').once('value', snapshot => {
-          const data = snapshot.val() || {};
-          Object.entries(data).forEach(([key, registro]) => {
-            if (registro.nombre && registro.nombre.toLowerCase() === usuario) {
-              db.ref('registros/' + key).remove();
-            }
+
+    function eliminarRegistroEspecifico(key, nombre) {
+      Swal.fire({
+        title: '¿Eliminar registro?',
+        text: '¿Seguro que deseas eliminar este registro?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          db.ref('registros/' + key).remove(err => {
+            if (err) return Swal.fire('Error', 'No se pudo eliminar el registro.', 'error');
+            Swal.fire('Eliminado', 'Registro eliminado correctamente.', 'success');
+            window.mostrarDetalleUsuario(nombre);
           });
-          document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
-          Swal.fire('Eliminado', 'Tu historial ha sido eliminado.', 'success');
-        });
-        localStorage.removeItem('historial_registros');
+        }
+      });
+    }
+
+    // --- Funciones globales para HTML ---
+    window.mostrarPanelAdmin = mostrarPanelAdmin;
+    window.mostrarDetalleUsuario = mostrarDetalleUsuario;
+    window.eliminarRegistroEspecifico = eliminarRegistroEspecifico;
+
+    // --- Inicialización ---
+    window.addEventListener('DOMContentLoaded', () => {
+      usuarioActual = localStorage.getItem('usuarioActual') || null;
+      if (!usuarioActual) {
+        mostrarLogin();
+        setAdminBtnByRol(null);
       }
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) {
+        try {
+          const data = JSON.parse(inicioPend);
+          if (data && data.inicio) {
+            inicio = new Date(data.inicio);
+            document.getElementById("nombre").value = data.nombre || '';
+            document.getElementById("motivo").value = data.motivo || '';
+            setInfoInicio(inicio);
+          }
+        } catch(e) {}
+      }
+      aplicarModoOscuro();
+      // Eventos login
+      document.getElementById('loginBtn').onclick = loginUsuario;
+      ['loginUsuario', 'loginClave'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', e => {
+          if (e.key === 'Enter') loginUsuario();
+        });
+      });
+      document.getElementById('darkModeToggle').onclick = () => {
+        const dark = !(localStorage.getItem('modo_oscuro') === '1');
+        localStorage.setItem('modo_oscuro', dark ? '1' : '0');
+        aplicarModoOscuro();
+      };
+      // Eliminar historial
+      window.eliminarHistorial = function() {
+        if (confirm('¿Seguro que deseas eliminar tu historial?')) {
+          const usuario = usuarioActual || getInputValue('nombre').toLowerCase();
+          db.ref('registros').once('value', snapshot => {
+            const data = snapshot.val() || {};
+            Object.entries(data).forEach(([key, registro]) => {
+              if (registro.nombre && registro.nombre.toLowerCase() === usuario) {
+                db.ref('registros/' + key).remove();
+              }
+            });
+            document.getElementById('historial').innerHTML = "<strong>Histórico de tiempos:</strong><div id='resumenHoras'></div>";
+            Swal.fire('Eliminado', 'Tu historial ha sido eliminado.', 'success');
+          });
+          localStorage.removeItem('historial_registros');
+        }
+      };
+    });
+
+    // --- Cambiar clave usuario ---
+    document.getElementById('btnCambiarClave').onclick = async function() {
+      const { value: formValues } = await Swal.fire({
+        title: 'Cambiar clave',
+        html:
+          '<input id="swal-usuario" class="swal2-input" placeholder="Usuario">' +
+          '<input id="swal-clave-actual" type="password" class="swal2-input" placeholder="Clave actual">' +
+          '<input id="swal-nueva-clave" type="password" class="swal2-input" placeholder="Nueva clave">',
+        focusConfirm: false,
+        preConfirm: () => [
+          document.getElementById('swal-usuario').value.trim().toLowerCase(),
+          document.getElementById('swal-clave-actual').value.trim(),
+          document.getElementById('swal-nueva-clave').value.trim()
+        ],
+        confirmButtonText: 'Guardar',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!formValues) return;
+      const [usuario, claveActual, nuevaClave] = formValues;
+      if (!usuario || !claveActual || !nuevaClave) {
+        Swal.fire('Campos requeridos', 'Completa todos los campos.', 'warning');
+        return;
+      }
+
+      db.ref('usuarios/' + usuario).once('value', snap => {
+        const data = snap.val();
+        if (!data) return Swal.fire('Error', 'Usuario no encontrado.', 'error');
+        if (data.clave !== claveActual) return Swal.fire('Error', 'La clave actual es incorrecta.', 'error');
+        db.ref('usuarios/' + usuario + '/clave').set(nuevaClave, err => {
+          if (err) Swal.fire('Error', 'No se pudo cambiar la clave.', 'error');
+          else Swal.fire('¡Listo!', 'Clave cambiada correctamente.', 'success');
+        });
+      });
     };
-  });
 
-  // --- Cambiar clave usuario ---
-  document.getElementById('btnCambiarClave').onclick = async function() {
-    const { value: formValues } = await Swal.fire({
-      title: 'Cambiar clave',
-      html:
-        '<input id="swal-usuario" class="swal2-input" placeholder="Usuario">' +
-        '<input id="swal-clave-actual" type="password" class="swal2-input" placeholder="Clave actual">' +
-        '<input id="swal-nueva-clave" type="password" class="swal2-input" placeholder="Nueva clave">',
-      focusConfirm: false,
-      preConfirm: () => [
-        document.getElementById('swal-usuario').value.trim().toLowerCase(),
-        document.getElementById('swal-clave-actual').value.trim(),
-        document.getElementById('swal-nueva-clave').value.trim()
-      ],
-      confirmButtonText: 'Guardar',
-      showCancelButton: true,
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (!formValues) return;
-    const [usuario, claveActual, nuevaClave] = formValues;
-    if (!usuario || !claveActual || !nuevaClave) {
-      Swal.fire('Campos requeridos', 'Completa todos los campos.', 'warning');
-      return;
-    }
-
-    db.ref('usuarios/' + usuario).once('value', snap => {
-      const data = snap.val();
-      if (!data) return Swal.fire('Error', 'Usuario no encontrado.', 'error');
-      if (data.clave !== claveActual) return Swal.fire('Error', 'La clave actual es incorrecta.', 'error');
-      db.ref('usuarios/' + usuario + '/clave').set(nuevaClave, err => {
-        if (err) Swal.fire('Error', 'No se pudo cambiar la clave.', 'error');
-        else Swal.fire('¡Listo!', 'Clave cambiada correctamente.', 'success');
+    // --- Exportar registros a Excel ---
+    document.getElementById('descargarExcelAdminBtn').onclick = function() {
+      db.ref('registros').once('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const registros = Object.values(data);
+        if (registros.length === 0) return Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
+        let totalMin = 0, totalMontos = 0;
+        const rows = registros.map(r => {
+          let min = 0;
+          if (r.duracion) {
+            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+            if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          }
+          totalMin += min;
+          let montoExcel = '';
+          if (r.monto && !isNaN(r.monto)) {
+            totalMontos += parseFloat(r.monto);
+            montoExcel = parseFloat(r.monto).toFixed(2);
+          }
+          return {
+            Nombre: r.nombre || '',
+            Motivo: r.motivo || '',
+            'Monto (USDT)': montoExcel,
+            Día: r.dia || '',
+            Inicio: r.inicio || '',
+            Fin: r.fin || '',
+            Duración: r.duracion || ''
+          };
+        });
+        const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
+        rows.push({
+          Nombre: '',
+          Motivo: '',
+          'Monto (USDT)': '',
+          Día: '',
+          Inicio: '',
+          Fin: 'TOTAL USDT',
+          Duración: totalUSDTExcel
+        });
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Registros");
+        XLSX.writeFile(wb, "registros_completos.xlsx");
       });
-    });
-  };
+    };
 
-  // --- Exportar registros a Excel ---
-  document.getElementById('descargarExcelAdminBtn').onclick = function() {
-    db.ref('registros').once('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const registros = Object.values(data);
-      if (registros.length === 0) return Swal.fire('Sin datos', 'No hay registros para exportar.', 'info');
-      let totalMin = 0, totalMontos = 0;
-      const rows = registros.map(r => {
-        let min = 0;
-        if (r.duracion) {
-          const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
-          if (match) min = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-        }
-        totalMin += min;
-        let montoExcel = '';
-        if (r.monto && !isNaN(r.monto)) {
-          totalMontos += parseFloat(r.monto);
-          montoExcel = parseFloat(r.monto).toFixed(2);
-        }
-        return {
-          Nombre: r.nombre || '',
-          Motivo: r.motivo || '',
-          'Monto (USDT)': montoExcel,
-          Día: r.dia || '',
-          Inicio: r.inicio || '',
-          Fin: r.fin || '',
-          Duración: r.duracion || ''
-        };
-      });
-      const totalUSDTExcel = (totalMin * 0.025 + totalMontos).toFixed(2);
-      rows.push({
-        Nombre: '',
-        Motivo: '',
-        'Monto (USDT)': '',
-        Día: '',
-        Inicio: '',
-        Fin: 'TOTAL USDT',
-        Duración: totalUSDTExcel
-      });
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Registros");
-      XLSX.writeFile(wb, "registros_completos.xlsx");
-    });
-  };
-
+    // --- Logout ---
     document.getElementById('logoutBtn').onclick = function() {
-  Swal.fire({
-    title: '¿Cerrar sesión?',
-    text: '¿Seguro que deseas cerrar sesión?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, cerrar sesión',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      location.reload();
-    }
-  });
-};
+      Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: '¿Seguro que deseas cerrar sesión?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          location.reload();
+        }
+      });
+    };
+
+    // --- Guardar registro pendiente antes de salir ---
+    window.addEventListener('beforeunload', function () {
+      const inicioPend = localStorage.getItem('inicio_pendiente');
+      if (inicioPend) {
+        try {
+          const data = JSON.parse(inicioPend);
+          if (data && data.inicio && data.nombre && data.motivo) {
+            const inicio = new Date(data.inicio);
+            const fin = new Date();
+            const finVE = new Date(fin.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+            let motivo = data.motivo;
+            let monto = 0;
+            if (data.contingencia) {
+              motivo += (motivo ? ' | ' : '') + 'Contingencia: 10 USDT';
+              monto += 10;
+            }
+            const hoy = finVE;
+            const dia = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+            const registro = {
+              nombre: data.nombre,
+              motivo,
+              dia,
+              inicio: formatearHora(inicio),
+              fin: formatearHora(finVE),
+              duracion: calcularDuracionTexto(inicio, finVE)
+            };
+            if (monto > 0) registro.monto = monto.toFixed(2);
+            db.ref('registros').push(registro);
+            localStorage.removeItem('inicio_pendiente');
+          }
+        } catch (err) {}
+      }
+    });
   </script>
 
   <div class="container">
     <div class="card">
-      <h1>Contabilizador de Horas</h1>
+      <h1>Contador de Horas</h1>
       <div id="saludoUsuario" style="display:none; font-size:1.1rem; font-weight:bold; margin-bottom:10px;"></div>
       <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
       <input type="text" id="motivo" name="motivo" placeholder="Motivo">
