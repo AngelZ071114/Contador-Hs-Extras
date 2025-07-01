@@ -940,26 +940,37 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   </div>
   <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
   <button id="adminBtn" class="btn-admin" title="Administrador">🔑</button>
+  <!-- Panel administrativo optimizado -->
   <div id="adminModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0008;z-index:400;align-items:center;justify-content:center;">
-    <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:900px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
-      <!-- Panel lateral de usuarios -->
-      <div id="adminSidebar" style="width:270px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 12px 24px 18px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
+    <div style="background:#fff;color:#23272e;display:flex;flex-direction:row;padding:0;border-radius:16px;max-width:1100px;width:95vw;max-height:90vh;overflow:hidden;position:relative;">
+      <!-- Panel lateral de usuarios (más ancho) -->
+      <div id="adminSidebar" style="width:370px;background:#f7fafd;border-radius:16px 0 0 16px;padding:28px 18px 24px 24px;box-shadow:2px 0 12px #4a90e210;overflow-y:auto;">
         <h3 style="margin-top:0;font-size:1.1rem;color:#357abd;">Usuarios</h3>
         <div id="usuariosSidebarLista"></div>
-        <div style="margin-top:18px;">
-          <input id="nuevoUsuario" placeholder="Usuario" style="margin-bottom:6px;width:90%;">
-          <input id="nuevaClave" placeholder="Clave" type="password" style="margin-bottom:6px;width:90%;">
-          <select id="nuevoRol" style="margin-bottom:6px;width:90%;">
-            <option value="usuario">Usuario</option>
-            <option value="superadmin">Superadmin</option>
-          </select>
-          <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="width:90%;">Agregar usuario</button>
-        </div>
       </div>
       <!-- Panel principal admin -->
       <div style="flex:1;padding:32px 24px 24px 24px;overflow-y:auto;position:relative;">
         <button id="closeAdminModal" style="position:absolute;top:12px;right:16px;font-size:22px;background:none;border:none;cursor:pointer;color:#888;">✖️</button>
         <h2 style="margin-top:0">Panel de Administración</h2>
+        <!-- Gestión de usuarios en una fila -->
+        <div id="gestionUsuarios" style="margin-bottom:24px; display:flex; align-items:flex-end; gap:10px;">
+          <div style="display:flex; flex-direction:column;">
+            <label for="nuevoUsuario" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Usuario</label>
+            <input id="nuevoUsuario" placeholder="Usuario" style="width:140px;">
+          </div>
+          <div style="display:flex; flex-direction:column;">
+            <label for="nuevaClave" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Clave</label>
+            <input id="nuevaClave" placeholder="Clave" type="password" style="width:120px;">
+          </div>
+          <div style="display:flex; flex-direction:column;">
+            <label for="nuevoRol" style="font-size:13px;color:#357abd;font-weight:600;margin-bottom:2px;">Rol</label>
+            <select id="nuevoRol" style="width:120px;">
+              <option value="usuario">Usuario</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+          </div>
+          <button onclick="window.agregarUsuario()" class="btn btn-enviar" style="height:40px;margin-top:18px;">Agregar usuario</button>
+        </div>
         <div id="adminResumen"></div>
         <div id="adminRegistros" style="margin-top:18px;"></div>
         <div style="display: flex; justify-content: center; margin-top: 18px;">
