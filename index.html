@@ -172,11 +172,30 @@
     }
     .info p { font-size: 16px; color: #555; margin: 10px 0; }
     .info span { font-weight: bold; color: #222; }
-    .historial { margin-top: 30px; text-align: left; max-height: 200px; overflow-y: auto; border-top: 1px solid #ddd; padding-top: 15px; }
+    .historial {
+      max-width: 550px;
+      min-width: 320px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 30px;
+      text-align: left;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      overflow-y: auto;
+    }
     .historial-item {
-      font-size: 15px; margin-bottom: 18px; background: linear-gradient(120deg, #f7fafd 80%, #e3e8ee 100%);
-      padding: 16px 20px 12px 20px; border-radius: 14px; color: #23272e; box-shadow: 0 4px 18px #4a90e220;
+      font-size: 15px;
+      margin-bottom: 18px;
+      background: linear-gradient(120deg, #f7fafd 80%, #e3e8ee 100%);
+      padding: 16px 20px 12px 20px;
+      border-radius: 14px;
+      color: #23272e;
+      box-shadow: 0 4px 18px #4a90e220;
       transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+      width: 85%;              /* <-- Nuevo: 15% más angosto */
+      margin-left: auto;       /* Centrado horizontal */
+      margin-right: auto;      /* Centrado horizontal */
     }
     .historial-item strong { color: #357abd; font-size: 17px; font-weight: 700; margin-right: 6px; }
     .historial-item .historial-motivo { color: #f97f51; font-weight: 600; font-size: 15px; margin-left: 2px; }
@@ -425,6 +444,11 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
         marcarConectado(usuario, true);
         window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
         cargarHistorialUsuario();
+
+        // NUEVO: Mostrar saludo y ocultar input de nombre
+        document.getElementById('saludoUsuario').style.display = 'block';
+        document.getElementById('saludoUsuario').textContent = `Hola, ${usuario} 💪, es un placer ver a un chambeador pro max 😎.`;
+        document.getElementById('nombre').style.display = 'none';
       } else {
         mostrarError('loginError', 'Usuario o clave incorrectos');
       }
@@ -871,28 +895,27 @@ body.manual-dark #adminModal span[style*="color:#43b97b"] {
   <div class="container">
     <div class="card">
       <h1>Contabilizador de Horas</h1>
-      <div class="nombre-container">
-        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
-        <input type="text" id="motivo" name="motivo" placeholder="Motivo">
-        <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
-          <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
-          <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:40px;" min="0" step="any">
-          <button onclick="agregarMotivoTrabajo()" class="btn" style="width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
-        </div>
-        <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
+      <div id="saludoUsuario" style="display:none; font-size:1.1rem; font-weight:bold; margin-bottom:10px;"></div>
+      <input type="text" id="nombre" name="nombre" placeholder="Tu nombre">
+      <input type="text" id="motivo" name="motivo" placeholder="Motivo">
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <input type="text" id="motivoTrabajo" name="motivoTrabajo" placeholder="Motivo del trabajo (EO)" style="width:165px;">
+        <input type="number" id="montoPagar" name="montoPagar" placeholder="Monto a pagar" style="width:107px;height:40px;" min="0" step="any">
+        <button onclick="agregarMotivoTrabajo()" class="btn" style="width:182px;white-space:nowrap;text-align:center;">Añadir al historial</button>
       </div>
-      <button onclick="marcarInicio()" class="btn">Marcar Inicio</button>
-      <button onclick="marcarFin()" class="btn">Marcar Fin</button>
-      <button onclick="eliminarHistorial()" class="btn btn-eliminar">Eliminar Historial</button>
-      <div class="info">
-        <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
-        <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
-        <p><strong>Duración:</strong> <span id="duracion">-</span></p>
-      </div>
-      <div class="historial" id="historial">
-        <strong>Histórico de tiempos:</strong>
-        <div id="resumenHoras"></div>
-      </div>
+      <button id="contingenciaBtn" class="btn btn-contingencia" style="margin-top:8px;margin-bottom:8px;">Sumar 10 USDT por contingencia</button>
+    </div>
+    <button onclick="marcarInicio()" class="btn">Marcar Inicio</button>
+    <button onclick="marcarFin()" class="btn">Marcar Fin</button>
+    <button onclick="eliminarHistorial()" class="btn btn-eliminar">Eliminar Historial</button>
+    <div class="info">
+      <p><strong>Hora de inicio:</strong> <span id="horaInicio">-</span></p>
+      <p><strong>Hora de fin:</strong> <span id="horaFin">-</span></p>
+      <p><strong>Duración:</strong> <span id="duracion">-</span></p>
+    </div>
+    <div class="historial" id="historial">
+      <strong>Histórico de tiempos:</strong>
+      <div id="resumenHoras"></div>
     </div>
   </div>
   <button id="darkModeToggle" class="btn-darkmode" title="Alternar modo oscuro/claro">🌙</button>
