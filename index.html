@@ -655,6 +655,43 @@ body.manual-dark .btn-fin:hover {
 
     // --- Estado global ---
     let inicio = null, usuarioActual = null, rolActual = null;
+    // --- Marcar desconectado al cerrar o recargar la página ---
+window.addEventListener('beforeunload', function () {
+  if (usuarioActual) {
+    db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
+  }
+  // Aquí sigue tu código para guardar registro pendiente (ya lo tienes)
+  const inicioPend = localStorage.getItem('inicio_pendiente');
+  if (inicioPend) {
+    try {
+      const data = JSON.parse(inicioPend);
+      if (data && data.inicio && data.nombre && data.motivo) {
+        const inicio = new Date(data.inicio);
+        const fin = new Date();
+        const finVE = new Date(fin.toLocaleString("en-US", { timeZone: "America/Caracas" }));
+        let motivo = data.motivo;
+        let monto = 0;
+        if (data.contingencia) {
+          motivo += (motivo ? ' | ' : '') + 'Contingencia: 10 USDT';
+          monto += 10;
+        }
+        const hoy = finVE;
+        const dia = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+        const registro = {
+          nombre: data.nombre,
+          motivo,
+          dia,
+          inicio: formatearHora(inicio),
+          fin: formatearHora(finVE),
+          duracion: calcularDuracionTexto(inicio, finVE)
+        };
+        if (monto > 0) registro.monto = monto.toFixed(3);
+        db.ref('registros').push(registro);
+        localStorage.removeItem('inicio_pendiente');
+      }
+    } catch (err) {}
+  }
+});
 
     // --- Login y sesión ---
     function loginUsuario() {
@@ -670,7 +707,6 @@ body.manual-dark .btn-fin:hover {
           $('nombre').value = usuario;
           setAdminBtnByRol(rolActual);
           marcarConectado(usuario, true);
-          window.addEventListener('beforeunload', () => marcarConectado(usuario, false));
           cargarHistorialUsuario();
           $('saludoUsuario').style.display = 'block';
           $('saludoUsuario').textContent = `Hola, ${usuario}, ¿cómo te preparas para la chamba? 😎`;
@@ -1205,19 +1241,22 @@ body.manual-dark .btn-fin:hover {
 
     // --- Logout ---
     document.getElementById('logoutBtn').onclick = function() {
-      Swal.fire({
-        title: '¿Cerrar sesión?',
-        text: '¿Seguro que deseas cerrar sesión?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, cerrar sesión',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          location.reload();
-        }
-      });
-    };
+  Swal.fire({
+    title: '¿Cerrar sesión?',
+    text: '¿Seguro que deseas cerrar sesión?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cerrar sesión',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      if (usuarioActual) {
+        db.ref('usuarios/' + usuarioActual + '/conectado').set(false);
+      }
+      location.reload();
+    }
+  });
+};
 
     // --- Guardar registro pendiente antes de salir ---
     window.addEventListener('beforeunload', function () {
