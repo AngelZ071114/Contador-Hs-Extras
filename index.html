@@ -761,7 +761,7 @@ window.addEventListener('beforeunload', function () {
           text: '¿Olvidaste marcar el fin de tu jornada?',
           confirmButtonText: '¡Voy, gracias!'
         });
-      }, 1000 * 60 * 1); // 1 minuto
+      }, 1000 * 60 * 45); // 45 minutos
 
     };
 
@@ -1339,6 +1339,13 @@ if (r.monto && !isNaN(r.monto)) {
       cargarUsuariosEnSelectAdmin();
     };
   }
+  // Cerrar el modal al hacer click en el botón de cerrar
+  const btnCerrarCalculoTiempoAdmin = document.getElementById('btnCerrarCalculoTiempoAdmin');
+  if (btnCerrarCalculoTiempoAdmin) {
+    btnCerrarCalculoTiempoAdmin.onclick = function() {
+      document.getElementById('calculoTiempoBoxAdmin').style.display = 'none';
+    };
+  }
   const horas = document.getElementById('calculoHorasAdmin');
   const minutos = document.getElementById('calculoMinutosAdmin');
   if (horas) horas.oninput = actualizarCalculoResultadoAdmin;
@@ -1400,7 +1407,7 @@ function actualizarCalculoResultadoAdmin() {
   const usdt = totalMin * 0.025;
   document.getElementById('calculoResultadoAdmin').textContent =
     totalMin > 0 ? `Equivale a ${usdt.toFixed(3)} USDT` : '';
-}
+} 
   </script>
 </body>
 </html>
