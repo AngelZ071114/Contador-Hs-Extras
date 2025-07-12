@@ -631,6 +631,10 @@ body.manual-dark .btn-fin:hover {
   </button>
 </div>
   </div>
+  <!-- Sonido de campana -->
+  <audio id="sonidoCampana" preload="auto">
+  <source src="campana.mp3" type="audio/mpeg">
+</audio>
 
   <script type="module">
     // --- Configuración Firebase ---
@@ -746,9 +750,23 @@ window.addEventListener('beforeunload', function () {
       inicio = obtenerHoraLocalVE();
       setInfoInicio(inicio);
       localStorage.setItem('inicio_pendiente', JSON.stringify({ nombre, motivo, inicio: inicio.toISOString() }));
+      // Iniciar recordatorio automático
+      if (window._recordatorioFin) clearTimeout(window._recordatorioFin);
+      window._recordatorioFin = setTimeout(() => {
+        const campana = document.getElementById("sonidoCampana");
+      if (campana) campana.play().catch(() => {});
+        Swal.fire({
+          icon: 'info',
+          title: '⏰ Recordatorio',
+          text: '¿Olvidaste marcar el fin de tu jornada?',
+          confirmButtonText: '¡Voy, gracias!'
+        });
+      }, 1000 * 60 * 1); // 1 minuto
+
     };
 
     window.marcarFin = () => {
+      if (window._recordatorioFin) clearTimeout(window._recordatorioFin);
       if (!inicio) return Swal.fire('Atención', 'Primero marca la hora de inicio.', 'warning');
       const nombre = $('nombre').value.trim();
       if (!nombre) return Swal.fire('Campo requerido', 'Por favor, ingresa un nombre.', 'warning');
@@ -789,6 +807,7 @@ window.addEventListener('beforeunload', function () {
       const restoMin = minutos % 60;
       const restoSeg = segundos % 60;
       return `${horas}h ${restoMin}m ${restoSeg}s`;
+
     }
 
     // --- Motivo trabajo directo ---
@@ -966,10 +985,19 @@ window.addEventListener('beforeunload', function () {
         registros.forEach(r => {
           const nombre = r.nombre || '-';
           if (!resumenPorUsuario[nombre]) resumenPorUsuario[nombre] = { count: 0, monto: 0 };
+          let montoIndividual = 0;
           if (r.monto && !isNaN(r.monto)) {
-            resumenPorUsuario[nombre].monto += parseFloat(r.monto);
-            totalMontos += parseFloat(r.monto);
+            montoIndividual = parseFloat(r.monto);
+          } else if (r.duracion) {
+            const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+            if (match) {
+            const totalMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+            montoIndividual = totalMin * 0.025;
           }
+        }
+        resumenPorUsuario[nombre].monto += montoIndividual;
+        totalMontos += montoIndividual;
+
           resumenPorUsuario[nombre].count++;
           totalRegistros++;
         });
@@ -1038,7 +1066,17 @@ window.addEventListener('beforeunload', function () {
   `;
   registros.forEach(r => {
     // Solo mostrar el monto guardado, sin sumar por tiempo
-    let montoMostrar = (r.monto && !isNaN(r.monto)) ? parseFloat(r.monto).toFixed(3) : '-';
+    let montoMostrar = '-';
+if (r.monto && !isNaN(r.monto)) {
+  montoMostrar = parseFloat(r.monto).toFixed(3);
+} else if (r.duracion) {
+  const match = r.duracion.match(/(\d+)h\s+(\d+)m/);
+  if (match) {
+    const totalMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+    montoMostrar = (totalMin * 0.025).toFixed(3); // cálculo estimado si no existe monto directo
+  }
+}
+
     html += `
       <tr>
         <td style='border:1px solid #ccc;padding:8px;'>${r.motivo || '-'}</td>
@@ -1339,6 +1377,7 @@ window.addEventListener('beforeunload', function () {
     };
   }
 });
+
 
 function cargarUsuariosEnSelectAdmin() {
   const select = document.getElementById('calculoUsuarioAdmin');
